@@ -1,10 +1,21 @@
 import { db } from '../model';
 import dotenv from 'dotenv';
 dotenv.config();
-import { ERRORTYPES, MODEL, RES_STATUS, RES_TYPES } from '../constant';
+import {
+    ERRORTYPES,
+    INDEXES,
+    INDEXES_NAMES,
+    MODEL,
+    RES_STATUS,
+    RES_TYPES,
+} from '../constant';
 import { sendResponse } from '../utils';
 import path from 'path';
 import fs from 'fs';
+import axios from 'axios';
+import moment from 'moment';
+import { Op } from 'sequelize';
+import { get_upcoming_expiry_date } from '../helpers';
 const csv = require('csv-parser');
 
 class InstrumentsController {
@@ -34,7 +45,13 @@ class InstrumentsController {
                             exchange,
                         } = raw;
 
-                        await db[MODEL.INSTRUMENT].create(raw);
+                        if (
+                            exchange === 'NSE_EQ' ||
+                            exchange === 'NSE_FO' ||
+                            exchange === 'NSE_INDEX'
+                        ) {
+                            await db[MODEL.INSTRUMENT].create(raw);
+                        }
                     })
                     .on('end', () => {
                         resolve();
@@ -170,6 +187,139 @@ class InstrumentsController {
         );
         return istTimestamp.toLocaleString();
     };
+
+    async get_index_strike(req, res, next) {
+        try {
+            const INDEXES = [
+                'NSE_INDEX|NIFTY MID SELECT',
+                'NSE_INDEX|Nifty 50',
+                'NSE_INDEX|Nifty Bank',
+                'NSE_INDEX|Nifty Fin Service',
+            ];
+            await Promise.all(
+                INDEXES.map(async (indexes) => {
+                    const accessToken = process.env.OAUTH2_ACCESS_TOKEN;
+                    const config = {
+                        method: 'get',
+                        url: 'https://api.upstox.com/v2/option/contract',
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                            Accept: 'application/json',
+                        },
+                        params: {
+                            instrument_key: indexes,
+                        },
+                        maxBodyLength: Infinity,
+                    };
+                    const response = await axios(config);
+                    for (let data of response.data?.data) {
+                        const find_options = await db[
+                            MODEL.OPTIONS_CHAINS
+                        ].findOne({
+                            where: { instrument_key: data.instrument_key },
+                        });
+                        console.log(find_options);
+                        if (!find_options) {
+                            await db[MODEL.OPTIONS_CHAINS].create(data);
+                        }
+                    }
+                }),
+            );
+
+            return sendResponse(res, {
+                responseType: RES_STATUS.CREATE,
+                // data: response.data,
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+
+    async strike_to_genrate_options(req, res, next) {
+        try {
+            const accessToken = process.env.OAUTH2_ACCESS_TOKEN;
+            const options = await db[MODEL.OPTIONS_CHAINS].findAll({});
+            for (let options_data of options) {
+                console.log(options_data.instrument_key);
+                const config = {
+                    method: 'get',
+                    url: 'https://api.upstox.com/v2/market-quote/ltp',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        Accept: 'application/json',
+                    },
+                    params: {
+                        instrument_key: options_data.instrument_key,
+                    },
+                    maxBodyLength: Infinity,
+                };
+                const response = await axios(config);
+                for (const key in response.data.data) {
+                    if (
+                        Object.prototype.hasOwnProperty.call(
+                            response.data.data,
+                            key,
+                        )
+                    ) {
+                        const lastPrice = response.data.data[key].last_price;
+                        console.log(lastPrice);
+                        await db[MODEL.OPTIONS_CHAINS].update(
+                            {
+                                ltp: lastPrice,
+                            },
+                            {
+                                where: {
+                                    instrument_key: options_data.instrument_key,
+                                },
+                            },
+                        );
+                        break;
+                    }
+                }
+            }
+
+            // const nextExpiryDate = await get_upcoming_expiry_date(
+            //     INDEXES_NAMES.BANKNIFTY,
+            // );
+
+            // const ceOptions = await db[MODEL.OPTIONS_CHAINS].findAll({
+            //     where: {
+            //         expiry: nextExpiryDate,
+            //         strike_price: {
+            //             [Op.gte]: lastPrice,
+            //         },
+            //         instrument_type: 'CE',
+            //     },
+            //     limit: 40,
+            //     order: [['strike_price', 'ASC']],
+            // });
+
+            // const peOptions = await db[MODEL.OPTIONS_CHAINS].findAll({
+            //     where: {
+            //         expiry: nextExpiryDate,
+            //         strike_price: {
+            //             [Op.lte]: lastPrice,
+            //         },
+            //         instrument_type: 'PE',
+            //     },
+            //     limit: 40,
+            //     order: [['strike_price', 'DESC']],
+            // });
+
+            // Find the next expiry date
+
+            return sendResponse(res, {
+                responseType: RES_STATUS.CREATE,
+                // data: {
+                //     lastPrice,
+                // },
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
 }
 
 export const instrumentsController = new InstrumentsController();

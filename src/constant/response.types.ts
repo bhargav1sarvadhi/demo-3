@@ -59,4 +59,18 @@ export enum MODEL {
     USER = 'userModel',
     INSTRUMENT = 'instrumentsModel',
     CANDELS = 'candelsModel',
+    OPTIONS_CHAINS = 'OptionchainModel',
+}
+
+export enum INDEXES {
+    MIDCAP = 'NSE_INDEX|NIFTY MID SELECT',
+    NIFTY_50 = 'NSE_INDEX|Nifty 50',
+    BANKNIFTY = 'NSE_INDEX|Nifty Bank',
+    FINNITY = 'NSE_INDEX|Nifty Fin Service',
+}
+export enum INDEXES_NAMES {
+    MIDCAP = 'MIDCPNIFTY',
+    NIFTY_50 = 'NIFTY',
+    BANKNIFTY = 'BANKNIFTY',
+    FINNITY = 'FINNIFTY',
 }

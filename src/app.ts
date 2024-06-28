@@ -15,6 +15,7 @@ import { ErrorHandler } from './middleware';
 import WebSocket from 'ws';
 import * as UpstoxClient from 'upstox-js-sdk';
 import protobuf from 'protobufjs';
+import './utils/cron.job';
 import { db } from './model';
 
 let protobufRoot = null;
