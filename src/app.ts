@@ -76,7 +76,7 @@ class AppServer {
             const user = await db[MODEL.USER].findOne({
                 where: { email: USER_DETAILS.EMAIL },
             });
-            OAUTH2.accessToken = user.token;
+            // OAUTH2.accessToken = user.token;
             if (OAUTH2.accessToken !== '') {
                 let apiInstance = new UpstoxClient.WebsocketApi();
                 apiInstance.getMarketDataFeedAuthorize(
