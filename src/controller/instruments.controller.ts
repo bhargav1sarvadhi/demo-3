@@ -15,7 +15,7 @@ import fs from 'fs';
 import axios from 'axios';
 import moment from 'moment';
 import { Op } from 'sequelize';
-import { get_upcoming_expiry_date } from '../helpers';
+import { get_current_day_name, get_upcoming_expiry_date } from '../helpers';
 const csv = require('csv-parser');
 
 class InstrumentsController {
@@ -239,81 +239,133 @@ class InstrumentsController {
     async strike_to_genrate_options(req, res, next) {
         try {
             const accessToken = process.env.OAUTH2_ACCESS_TOKEN;
-            const options = await db[MODEL.OPTIONS_CHAINS].findAll({});
-            for (let options_data of options) {
-                console.log(options_data.instrument_key);
-                const config = {
-                    method: 'get',
-                    url: 'https://api.upstox.com/v2/market-quote/ltp',
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        Accept: 'application/json',
-                    },
-                    params: {
-                        instrument_key: options_data.instrument_key,
-                    },
-                    maxBodyLength: Infinity,
-                };
-                const response = await axios(config);
-                for (const key in response.data.data) {
-                    if (
-                        Object.prototype.hasOwnProperty.call(
-                            response.data.data,
-                            key,
-                        )
-                    ) {
-                        const lastPrice = response.data.data[key].last_price;
-                        console.log(lastPrice);
-                        await db[MODEL.OPTIONS_CHAINS].update(
-                            {
-                                ltp: lastPrice,
+            const indexes = {
+                MONDAY: [
+                    INDEXES_NAMES.BANKNIFTY,
+                    INDEXES_NAMES.FINNITY,
+                    INDEXES_NAMES.NIFTY_50,
+                ],
+                TUESDAY: [
+                    INDEXES_NAMES.BANKNIFTY,
+                    INDEXES_NAMES.MIDCAP,
+                    INDEXES_NAMES.NIFTY_50,
+                ],
+                WEDNESDAY: [
+                    INDEXES_NAMES.FINNITY,
+                    INDEXES_NAMES.MIDCAP,
+                    INDEXES_NAMES.NIFTY_50,
+                ],
+                THURSDAY: [
+                    INDEXES_NAMES.BANKNIFTY,
+                    INDEXES_NAMES.FINNITY,
+                    INDEXES_NAMES.MIDCAP,
+                ],
+                FRIDAY: [
+                    INDEXES_NAMES.BANKNIFTY,
+                    INDEXES_NAMES.FINNITY,
+                    INDEXES_NAMES.MIDCAP,
+                    INDEXES_NAMES.NIFTY_50,
+                ],
+                SATURDAY: [
+                    INDEXES_NAMES.BANKNIFTY,
+                    INDEXES_NAMES.FINNITY,
+                    INDEXES_NAMES.MIDCAP,
+                    INDEXES_NAMES.NIFTY_50,
+                ],
+                SUNDAY: [
+                    INDEXES_NAMES.BANKNIFTY,
+                    INDEXES_NAMES.FINNITY,
+                    INDEXES_NAMES.MIDCAP,
+                    INDEXES_NAMES.NIFTY_50,
+                ],
+            };
+            // const currnet_day = get_current_day_name();
+            const currnet_day = 'MONDAY';
+            let options = [];
+            console.log(indexes[currnet_day]);
+            await Promise.all(
+                indexes[currnet_day].map(async (indexes_names) => {
+                    const expirey_date = await get_upcoming_expiry_date(
+                        indexes_names,
+                    );
+                    const find_hedging_module = await db[
+                        MODEL.HEDGING_TIME
+                    ].findOne({
+                        where: { day: currnet_day, index_name: indexes_names },
+                    });
+                    const options_datas = await db[
+                        MODEL.OPTIONS_CHAINS
+                    ].findAll({
+                        where: {
+                            expiry: expirey_date,
+                            name: indexes_names,
+                            ltp: {
+                                [Op.or]: [
+                                    {
+                                        [Op.between]: [
+                                            find_hedging_module?.premium_start,
+                                            find_hedging_module?.premium_end,
+                                        ],
+                                    },
+                                    {
+                                        [Op.between]: [
+                                            find_hedging_module?.premium_start /
+                                                10,
+                                            find_hedging_module?.premium_end /
+                                                10,
+                                        ],
+                                    },
+                                ],
                             },
-                            {
-                                where: {
-                                    instrument_key: options_data.instrument_key,
-                                },
-                            },
-                        );
-                        break;
-                    }
-                }
-            }
-
-            // const nextExpiryDate = await get_upcoming_expiry_date(
-            //     INDEXES_NAMES.BANKNIFTY,
-            // );
-
-            // const ceOptions = await db[MODEL.OPTIONS_CHAINS].findAll({
-            //     where: {
-            //         expiry: nextExpiryDate,
-            //         strike_price: {
-            //             [Op.gte]: lastPrice,
-            //         },
-            //         instrument_type: 'CE',
-            //     },
-            //     limit: 40,
-            //     order: [['strike_price', 'ASC']],
-            // });
-
-            // const peOptions = await db[MODEL.OPTIONS_CHAINS].findAll({
-            //     where: {
-            //         expiry: nextExpiryDate,
-            //         strike_price: {
-            //             [Op.lte]: lastPrice,
-            //         },
-            //         instrument_type: 'PE',
-            //     },
-            //     limit: 40,
-            //     order: [['strike_price', 'DESC']],
-            // });
-
-            // Find the next expiry date
-
+                        },
+                        order: [['strike_price', 'ASC']],
+                    });
+                    options = [...options, ...options_datas];
+                }),
+            );
+            await Promise.all(
+                options.map(async (data) => {
+                    await db[MODEL.HEDGING_OPTIONS].create({
+                        options_chain_id: data.id,
+                        name: data.name,
+                        segment: data.segment,
+                        exchange: data.exchange,
+                        expiry: data.expiry,
+                        weekly: data.weekly,
+                        instrument_key: data.instrument_key,
+                        exchange_token: data.exchange_token,
+                        trading_symbol: data.trading_symbol,
+                        tick_size: data.tick_size,
+                        lot_size: data.lot_size,
+                        instrument_type: data.instrument_type,
+                        freeze_quantity: data.freeze_quantity,
+                        underlying_type: data.underlying_type,
+                        underlying_key: data.underlying_key,
+                        underlying_symbol: data.underlying_symbol,
+                        strike_price: data.strike_price,
+                        ltp: data.ltp,
+                        minimum_lot: data.minimum_lot,
+                    });
+                }),
+            );
             return sendResponse(res, {
                 responseType: RES_STATUS.CREATE,
-                // data: {
-                //     lastPrice,
-                // },
+                data: options,
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+
+    async insert_hedging_strategy(req, res, next) {
+        try {
+            const hedging = await db[MODEL.HEDGING_TIME].bulkCreate(
+                req.body.data,
+            );
+            return sendResponse(res, {
+                responseType: RES_STATUS.CREATE,
+                data: hedging,
                 message: res.__('instruments').insert,
             });
         } catch (error) {

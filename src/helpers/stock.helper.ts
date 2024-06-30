@@ -17,3 +17,11 @@ export const get_upcoming_expiry_date = async (indexes_name) => {
     const nextExpiryDate = nextExpiry ? nextExpiry.expiry : null;
     return nextExpiryDate;
 };
+
+export const get_current_day_name = () => {
+    const currentUTCDate = moment.utc();
+    const currentISTDate = currentUTCDate.add(5, 'hours').add(30, 'minutes');
+    const formattedDate = currentISTDate.format('YYYY-MM-DD');
+    const dayName = currentISTDate.format('dddd').toUpperCase();
+    return dayName;
+};

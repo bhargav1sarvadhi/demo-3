@@ -60,6 +60,8 @@ export enum MODEL {
     INSTRUMENT = 'instrumentsModel',
     CANDELS = 'candelsModel',
     OPTIONS_CHAINS = 'OptionchainModel',
+    HEDGING_TIME = 'hedgingTimeModel',
+    HEDGING_OPTIONS = 'hedgingOptionsModel',
 }
 
 export enum INDEXES {
@@ -73,4 +75,8 @@ export enum INDEXES_NAMES {
     NIFTY_50 = 'NIFTY',
     BANKNIFTY = 'BANKNIFTY',
     FINNITY = 'FINNIFTY',
+}
+
+export enum USER_DETAILS {
+    EMAIL = 'bhargav9183@gmail.com',
 }

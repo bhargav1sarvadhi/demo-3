@@ -17,12 +17,13 @@ import * as UpstoxClient from 'upstox-js-sdk';
 import protobuf from 'protobufjs';
 import './utils/cron.job';
 import { db } from './model';
+import { USER_DETAILS } from './constant/response.types';
 
 let protobufRoot = null;
 let defaultClient = UpstoxClient.ApiClient.instance;
 let apiVersion = '2.0';
 let OAUTH2 = defaultClient.authentications['OAUTH2'];
-OAUTH2.accessToken = process.env.OAUTH2_ACCESS_TOKEN;
+// OAUTH2.accessToken = process.env.OAUTH2_ACCESS_TOKEN;
 
 const port = process.env.PORT_SERVER || 8000;
 
@@ -66,12 +67,16 @@ class AppServer {
             const wsUrl = await this.getMarketFeedUrl();
             const ws = await this.connectWebSocket(wsUrl);
         } catch (error) {
-            console.error('An error occurred:', error);
+            console.error('An error occurred:', error.message);
         }
     }
 
     async getMarketFeedUrl() {
-        return new Promise<string>((resolve, reject) => {
+        return new Promise<string>(async (resolve, reject) => {
+            const user = await db[MODEL.USER].findOne({
+                where: { email: USER_DETAILS.EMAIL },
+            });
+            OAUTH2.accessToken = user.token;
             if (OAUTH2.accessToken !== '') {
                 let apiInstance = new UpstoxClient.WebsocketApi();
                 apiInstance.getMarketDataFeedAuthorize(
@@ -123,7 +128,7 @@ class AppServer {
                             mode: 'ltpc',
                             instrumentKeys: [
                                 'NSE_INDEX|Nifty 50',
-                                'NSE_FO|67509',
+                                // 'NSE_FO|67509',
                             ],
                         },
                     };

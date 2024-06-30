@@ -5,7 +5,7 @@
 //     uploadImage,
 //     uploadVideo,
 // } from './aws.fileupload';
-import { get_upcoming_expiry_date } from './stock.helper';
+import { get_current_day_name, get_upcoming_expiry_date } from './stock.helper';
 import { validateReq } from './validation.helper';
 
 export {
@@ -16,4 +16,5 @@ export {
     validateReq,
     // uploadVideo,
     get_upcoming_expiry_date,
+    get_current_day_name,
 };
