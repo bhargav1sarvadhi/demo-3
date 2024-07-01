@@ -5,9 +5,14 @@ import { INDEXES_NAMES, MODEL, ROLES } from '../constant';
 import { db } from '../model';
 import axios from 'axios';
 import moment from 'moment';
-import { get_current_day_name, get_upcoming_expiry_date } from '../helpers';
+import {
+    current_strike_price,
+    get_current_day_name,
+    get_upcoming_expiry_date,
+    strike_around_ce_pe,
+} from '../helpers';
 import { Op } from 'sequelize';
-import { USER_DETAILS } from '../constant/response.types';
+import { INDEXES, USER_DETAILS } from '../constant/response.types';
 
 cron.schedule(
     '51 13 * * *',
@@ -126,14 +131,14 @@ cron.schedule(
                 }
             };
             logger.info('cron started');
-            const INDEXES = [
+            const INDEXESES = [
                 'NSE_INDEX|NIFTY MID SELECT',
                 'NSE_INDEX|Nifty 50',
                 'NSE_INDEX|Nifty Bank',
                 'NSE_INDEX|Nifty Fin Service',
             ];
             await Promise.all(
-                INDEXES.map(async (indexes) => {
+                INDEXESES.map(async (indexes) => {
                     const config = {
                         method: 'get',
                         url: 'https://api.upstox.com/v2/option/contract',
@@ -218,6 +223,33 @@ cron.schedule(
                     options = [...options, ...options_datas];
                 }),
             );
+            const current_strike = await current_strike_price(INDEXES.MIDCAP);
+            const strikePrices = strike_around_ce_pe(current_strike, 10);
+            const expirey_date = await get_upcoming_expiry_date(
+                INDEXES_NAMES.MIDCAP,
+            );
+            const find_options = await db[MODEL.OPTIONS_CHAINS].findAll({
+                where: {
+                    [Op.or]: [
+                        {
+                            strike_price: {
+                                [Op.in]: strikePrices.CE,
+                            },
+
+                            instrument_type: 'CE',
+                        },
+                        {
+                            strike_price: {
+                                [Op.in]: strikePrices.PE,
+                            },
+                            instrument_type: 'PE',
+                        },
+                    ],
+                    name: INDEXES_NAMES.MIDCAP,
+                    expiry: expirey_date,
+                },
+            });
+            options = [...options, ...find_options];
             await Promise.all(
                 options.map(async (data) => {
                     await db[MODEL.HEDGING_OPTIONS].create({
@@ -243,6 +275,79 @@ cron.schedule(
                     });
                 }),
             );
+        } catch (error) {
+            logger.error('Error in cron send request', error);
+        }
+    },
+    {
+        timezone: 'Asia/Kolkata',
+    },
+);
+cron.schedule(
+    '*/30 * * * *',
+    async () => {
+        try {
+            const current_strike = await current_strike_price(INDEXES.MIDCAP);
+            const expirey_date = await get_upcoming_expiry_date(
+                INDEXES_NAMES.MIDCAP,
+            );
+            const roundedStrike = Math.round(current_strike / 100) * 100;
+            const find_options = await db[MODEL.OPTIONS_CHAINS].findAll({
+                where: {
+                    expiry: expirey_date,
+                    name: INDEXES_NAMES.MIDCAP,
+                    strike_price: roundedStrike,
+                },
+            });
+            const find_strike_options = await db[MODEL.STRIKE_MODEL].findOne({
+                where: {
+                    strike_price: roundedStrike,
+                },
+            });
+            if (find_strike_options) {
+                const find_data = await db[MODEL.STRIKE_MODEL].findAll({});
+                for (let data of find_data) {
+                    const current_strike = await current_strike_price(
+                        data.instrument_key,
+                    );
+                    await db[MODEL.STRIKE_MODEL].update(
+                        { ltp: current_strike },
+                        { where: { id: data.id } },
+                    );
+                }
+            }
+            if (!find_strike_options) {
+                await db[MODEL.STRIKE_MODEL].destroy({
+                    where: {},
+                    force: true,
+                });
+                for (let data of find_options) {
+                    const current_strike = await current_strike_price(
+                        data.instrument_key,
+                    );
+                    await db[MODEL.STRIKE_MODEL].create({
+                        name: data.name,
+                        segment: data.segment,
+                        exchange: data.exchange,
+                        expiry: data.expiry,
+                        weekly: data.weekly,
+                        instrument_key: data.instrument_key,
+                        exchange_token: data.exchange_token,
+                        trading_symbol: data.trading_symbol,
+                        tick_size: data.tick_size,
+                        lot_size: data.lot_size,
+                        instrument_type: data.instrument_type,
+                        freeze_quantity: data.freeze_quantity,
+                        underlying_type: data.underlying_type,
+                        underlying_key: data.underlying_key,
+                        underlying_symbol: data.underlying_symbol,
+                        strike_price: data.strike_price,
+                        ltp: current_strike,
+                        minimum_lot: data.minimum_lot,
+                    });
+                }
+            }
+            logger.info('Strike Price Updated job started.');
         } catch (error) {
             logger.error('Error in cron send request', error);
         }

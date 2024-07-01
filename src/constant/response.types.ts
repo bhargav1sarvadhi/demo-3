@@ -62,6 +62,7 @@ export enum MODEL {
     OPTIONS_CHAINS = 'OptionchainModel',
     HEDGING_TIME = 'hedgingTimeModel',
     HEDGING_OPTIONS = 'hedgingOptionsModel',
+    STRIKE_MODEL = 'strikePriceModel',
 }
 
 export enum INDEXES {

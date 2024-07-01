@@ -3,7 +3,11 @@ import { MODEL, RES_STATUS, USER_DETAILS } from '../../constant';
 import { sendResponse } from '../../utils';
 import { UpstoxClient } from 'upstox-js-sdk';
 import { db } from '../../model';
-import { exec } from 'child_process';
+import * as childProcess from 'child_process';
+import util from 'util';
+import path from 'path';
+import fs from 'fs';
+const execute = util.promisify(childProcess.exec);
 
 class AuthController {
     async upstock_login(req, res, next) {
@@ -42,22 +46,13 @@ class AuthController {
                 );
                 if (update === 1) {
                     console.log(update);
-                    // function restartServer() {
-                    exec('nodemon src\\app.ts', (err, stdout, stderr) => {
-                        if (err) {
-                            console.error('Error restarting server:', err);
-                            console.error('Error details:', err.message);
-                            return;
-                        }
-
-                        console.log('Server restarted successfully.');
-                        console.log('stdout:', stdout);
-                        console.log('stderr:', stderr);
-                    });
-                    // }
+                    async function restartServer() {
+                        console.log('arrived in restart');
+                    }
+                    await execute('node restart app.ts');
 
                     // Set timeout for one minute (60 seconds)
-                    // setTimeout(restartServer, 60 * 1000);
+                    setTimeout(restartServer, 30 * 1000);
                 }
             }
 

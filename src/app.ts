@@ -76,7 +76,7 @@ class AppServer {
             const user = await db[MODEL.USER].findOne({
                 where: { email: USER_DETAILS.EMAIL },
             });
-            // OAUTH2.accessToken = user.token;
+            OAUTH2.accessToken = user.token;
             if (OAUTH2.accessToken !== '') {
                 let apiInstance = new UpstoxClient.WebsocketApi();
                 apiInstance.getMarketDataFeedAuthorize(
@@ -119,17 +119,18 @@ class AppServer {
                 console.log('connected');
                 resolve(ws);
 
-                setTimeout(() => {
+                setTimeout(async () => {
+                    const options = await db[MODEL.HEDGING_OPTIONS].findAll({});
+                    const instrumentKeys = options.map(
+                        (option) => option.instrument_key,
+                    );
                     const data = {
                         typr: '',
                         guid: 'someguid',
                         method: 'sub',
                         data: {
                             mode: 'ltpc',
-                            instrumentKeys: [
-                                'NSE_INDEX|Nifty 50',
-                                // 'NSE_FO|67509',
-                            ],
+                            instrumentKeys: instrumentKeys,
                         },
                     };
                     ws.send(Buffer.from(JSON.stringify(data)));
@@ -140,41 +141,29 @@ class AppServer {
                 console.log('disconnected');
             });
 
-            ws.on('message', (data) => {
+            ws.on('message', async (data) => {
                 console.log(JSON.stringify(this.decodeProfobuf(data)));
                 const stocks_data: any = this.decodeProfobuf(data);
                 if (stocks_data && stocks_data.feeds) {
                     for (const key in stocks_data.feeds) {
                         if (stocks_data.feeds.hasOwnProperty(key)) {
                             const instrument_key = stocks_data.feeds[key];
-                            // console.log(instrument_key);
-                            // const marketOHLCData =
-                            //     instrument_key?.ff?.marketFF?.marketOHLC;
-                            // if (marketOHLCData) {
-                            //     marketOHLCData.ohlc.forEach(
-                            //         async (ohlcData) => {
-                            //             await db[MODEL.CANDELS].create({
-                            //                 instrument_key: key,
-                            //                 interval: ohlcData.interval,
-                            //                 open: ohlcData.open,
-                            //                 high: ohlcData.high,
-                            //                 low: ohlcData.low,
-                            //                 close: ohlcData.close,
-                            //                 volume: ohlcData.volume,
-                            //                 ts: `${ohlcData.ts}`,
-                            //             });
-                            //         },
-                            //     );
-                            // } else {
-                            //     // console.log(
-                            //     //     `No market OHLC data available for ${key}`,
-                            //     // );
-                            // }
+                            const ltp = instrument_key?.ltpc?.ltp;
+                            const update = await db[
+                                MODEL.HEDGING_OPTIONS
+                            ].update(
+                                {
+                                    ltp: ltp,
+                                },
+                                { where: { instrument_key: key } },
+                            );
+                            console.log(update);
                         }
                     }
                 } else {
                     console.log('No feeds data available');
                 }
+                console.log('calling event');
             });
 
             ws.on('error', (error) => {
