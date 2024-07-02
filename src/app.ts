@@ -17,7 +17,8 @@ import * as UpstoxClient from 'upstox-js-sdk';
 import protobuf from 'protobufjs';
 import './utils/cron.job';
 import { db } from './model';
-import { USER_DETAILS } from './constant/response.types';
+import { INDEXES, USER_DETAILS } from './constant/response.types';
+import { strategyController } from './controller';
 
 let protobufRoot = null;
 let defaultClient = UpstoxClient.ApiClient.instance;
@@ -121,16 +122,16 @@ class AppServer {
 
                 setTimeout(async () => {
                     const options = await db[MODEL.HEDGING_OPTIONS].findAll({});
-                    const instrumentKeys = options.map(
-                        (option) => option.instrument_key,
-                    );
+                    // const instrumentKeys = options.map(
+                    //     (option) => option.instrument_key,
+                    // );
                     const data = {
                         typr: '',
                         guid: 'someguid',
                         method: 'sub',
                         data: {
                             mode: 'ltpc',
-                            instrumentKeys: instrumentKeys,
+                            instrumentKeys: [INDEXES.BANKNIFTY],
                         },
                     };
                     ws.send(Buffer.from(JSON.stringify(data)));
@@ -157,13 +158,22 @@ class AppServer {
                                 },
                                 { where: { instrument_key: key } },
                             );
+                            const strike_update = await db[
+                                MODEL.STRIKE_MODEL
+                            ].update(
+                                {
+                                    ltp: ltp,
+                                },
+                                { where: { instrument_key: key } },
+                            );
                             console.log(update);
+                            console.log(strike_update);
                         }
                     }
                 } else {
                     console.log('No feeds data available');
                 }
-                console.log('calling event');
+                strategyController.percentage_strategy();
             });
 
             ws.on('error', (error) => {

@@ -1,3 +1,4 @@
 import { instrumentsController } from './instruments.controller';
+import { strategyController } from './strategy.controller';
 
-export { instrumentsController };
+export { instrumentsController, strategyController };

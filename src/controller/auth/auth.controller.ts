@@ -46,13 +46,13 @@ class AuthController {
                 );
                 if (update === 1) {
                     console.log(update);
-                    async function restartServer() {
-                        console.log('arrived in restart');
-                    }
-                    await execute('node restart app.ts');
+                    // async function restartServer() {
+                    //     console.log('arrived in restart');
+                    // }
+                    // await execute('node restart app.ts');
 
                     // Set timeout for one minute (60 seconds)
-                    setTimeout(restartServer, 30 * 1000);
+                    // setTimeout(restartServer, 30 * 1000);
                 }
             }
 

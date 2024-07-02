@@ -63,6 +63,7 @@ export enum MODEL {
     HEDGING_TIME = 'hedgingTimeModel',
     HEDGING_OPTIONS = 'hedgingOptionsModel',
     STRIKE_MODEL = 'strikePriceModel',
+    STRATEGY = 'strategyModel',
 }
 
 export enum INDEXES {
@@ -80,4 +81,8 @@ export enum INDEXES_NAMES {
 
 export enum USER_DETAILS {
     EMAIL = 'bhargav9183@gmail.com',
+}
+
+export enum STRATEGY {
+    PERCENTAGE = 'PERCENTAGE',
 }

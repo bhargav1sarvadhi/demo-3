@@ -8,6 +8,7 @@ import {
     RES_STATUS,
     RES_TYPES,
     ROLES,
+    STRATEGY,
     USER_DETAILS,
 } from './response.types';
 
@@ -22,4 +23,5 @@ export {
     INDEXES,
     INDEXES_NAMES,
     USER_DETAILS,
+    STRATEGY,
 };

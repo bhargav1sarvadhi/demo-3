@@ -285,7 +285,7 @@ class InstrumentsController {
                 ],
             };
             // const currnet_day = get_current_day_name();
-            const currnet_day = 'MONDAY';
+            const currnet_day = 'TUESDAY';
             let options = [];
             console.log(indexes[currnet_day]);
             await Promise.all(
@@ -432,6 +432,24 @@ class InstrumentsController {
             return sendResponse(res, {
                 responseType: RES_STATUS.CREATE,
                 data: { find_options },
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+
+    async strategy_create(req, res, next) {
+        try {
+            const {
+                body: {
+                    data: { strategy_name, strategy_balance },
+                },
+            } = req;
+            const strategy = await db[MODEL.STRATEGY].create(req.body.data);
+            return sendResponse(res, {
+                responseType: RES_STATUS.CREATE,
+                data: strategy,
                 message: res.__('instruments').insert,
             });
         } catch (error) {
