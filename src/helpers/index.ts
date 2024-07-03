@@ -7,6 +7,12 @@
 // } from './aws.fileupload';
 import {
     current_strike_price,
+    findHedgingOptions,
+    find_CE,
+    find_CE_SELL,
+    find_PE,
+    find_PE_SELL,
+    generate_premium_range,
     get_current_day_name,
     get_upcoming_expiry_date,
     strike_around_ce_pe,
@@ -24,4 +30,10 @@ export {
     get_current_day_name,
     current_strike_price,
     strike_around_ce_pe,
+    generate_premium_range,
+    find_CE_SELL,
+    find_PE_SELL,
+    find_CE,
+    find_PE,
+    findHedgingOptions,
 };

@@ -64,6 +64,8 @@ export enum MODEL {
     HEDGING_OPTIONS = 'hedgingOptionsModel',
     STRIKE_MODEL = 'strikePriceModel',
     STRATEGY = 'strategyModel',
+    POSITION = 'positionModel',
+    TRADE = 'tradeModel',
 }
 
 export enum INDEXES {

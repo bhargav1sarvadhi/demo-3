@@ -1,5 +1,5 @@
 import { AppError } from '../utils';
-import { ERRORTYPES, MODEL, USER_DETAILS } from '../constant';
+import { ERRORTYPES, INDEXES_NAMES, MODEL, USER_DETAILS } from '../constant';
 import { db } from '../model';
 import moment from 'moment';
 import { Op } from 'sequelize';
@@ -71,4 +71,155 @@ export const current_strike_price = async (instrument_key) => {
     } catch (error) {
         throw new AppError(error.message, ERRORTYPES.UNKNOWN_ERROR);
     }
+};
+
+export const generate_premium_range = (start, end) => {
+    try {
+        const premiumRanges = [];
+        for (let i = start; i < end; i++) {
+            premiumRanges.push([i, i + 1]);
+        }
+        return premiumRanges;
+    } catch (error) {
+        throw new AppError(error.message, ERRORTYPES.UNKNOWN_ERROR);
+    }
+};
+
+export async function find_CE_SELL(data) {
+    const premiumRanges = generate_premium_range(
+        data.hedging_conditions.premium_start,
+        data.hedging_conditions.premium_end,
+    );
+    for (const [start, end] of premiumRanges) {
+        const CE_SELL = await db[MODEL.HEDGING_OPTIONS].findOne({
+            where: {
+                name: INDEXES_NAMES.MIDCAP,
+                expiry: '2024-07-08', //data.expirey
+                instrument_type: 'CE',
+                ltp: {
+                    [Op.between]: [start, end],
+                },
+            },
+            order: [
+                ['strike_price', 'ASC'],
+                ['ltp', 'ASC'],
+            ],
+        });
+        if (CE_SELL) {
+            return CE_SELL;
+        }
+    }
+
+    return null;
+}
+
+export async function find_PE_SELL(data) {
+    const premiumRanges = generate_premium_range(
+        data.ce_ltp,
+        data.hedging_conditions.premium_end,
+    );
+    for (const [start, end] of premiumRanges) {
+        const PE_SELL = await db[MODEL.HEDGING_OPTIONS].findOne({
+            where: {
+                name: INDEXES_NAMES.MIDCAP,
+                expiry: '2024-07-08', //data.expirey
+                instrument_type: 'PE',
+                ltp: {
+                    [Op.between]: [start, end],
+                },
+            },
+            order: [
+                ['strike_price', 'DESC'],
+                ['ltp', 'ASC'],
+            ],
+        });
+
+        if (PE_SELL) {
+            return PE_SELL;
+        }
+    }
+    return null;
+}
+
+export async function find_PE(data) {
+    const premiumRanges = generate_premium_range(
+        data.pe_sell_ltp / 10,
+        data.hedging_conditions.premium_end / 10,
+    );
+    for (const [start, end] of premiumRanges) {
+        const PE = await db[MODEL.HEDGING_OPTIONS].findOne({
+            where: {
+                name: INDEXES_NAMES.MIDCAP,
+                expiry: '2024-07-08', //data.expirey
+                instrument_type: 'PE',
+                ltp: {
+                    [Op.between]: [start, end],
+                },
+            },
+            order: [
+                ['strike_price', 'DESC'],
+                ['ltp', 'ASC'],
+            ],
+        });
+
+        if (PE) {
+            return PE;
+        }
+    }
+    return null;
+}
+export async function find_CE(data) {
+    const premiumRanges = generate_premium_range(
+        data.ce_sell_ltp / 10,
+        data.hedging_conditions.premium_end / 10,
+    );
+    for (const [start, end] of premiumRanges) {
+        const CE = await db[MODEL.HEDGING_OPTIONS].findOne({
+            where: {
+                name: INDEXES_NAMES.MIDCAP,
+                expiry: '2024-07-08', //data.expirey
+                instrument_type: 'CE',
+                ltp: {
+                    [Op.between]: [start, end],
+                },
+            },
+            order: [
+                ['strike_price', 'ASC'],
+                ['ltp', 'ASC'],
+            ],
+        });
+        if (CE) {
+            return CE;
+        }
+    }
+
+    return null;
+}
+
+export const findHedgingOptions = async ({ hedging_conditions, expirey }) => {
+    const CE_SELL = await find_CE_SELL({
+        hedging_conditions,
+        expirey,
+    });
+    if (CE_SELL) {
+        const PE_SELL = await find_PE_SELL({
+            hedging_conditions,
+            expirey,
+            ce_ltp: CE_SELL.ltp,
+        });
+        if (PE_SELL) {
+            const PE = await find_PE({
+                hedging_conditions,
+                expirey,
+                pe_sell_ltp: PE_SELL.ltp,
+            });
+            const CE = await find_CE({
+                hedging_conditions,
+                expirey,
+                ce_sell_ltp: CE_SELL.ltp,
+            });
+            return { CE_SELL, PE_SELL, PE, CE };
+        }
+    }
+    return null;
 };

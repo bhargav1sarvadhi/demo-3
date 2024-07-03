@@ -166,8 +166,10 @@ class AppServer {
                                 },
                                 { where: { instrument_key: key } },
                             );
-                            console.log(update);
-                            console.log(strike_update);
+                            await db[MODEL.TRADE].update(
+                                { ltp: ltp },
+                                { where: { instrument_key: key } },
+                            );
                         }
                     }
                 } else {

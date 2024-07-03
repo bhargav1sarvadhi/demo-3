@@ -27,7 +27,11 @@ export const hedgingTimeModel = (sequelize) => {
                 allowNull: true,
             },
             premium_end: {
-                type: DataTypes.STRING,
+                type: DataTypes.FLOAT,
+                allowNull: true,
+            },
+            required_margin: {
+                type: DataTypes.FLOAT,
                 allowNull: true,
             },
             market_premium: {
