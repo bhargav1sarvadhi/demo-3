@@ -94,7 +94,7 @@ export async function find_CE_SELL(data) {
         const CE_SELL = await db[MODEL.HEDGING_OPTIONS].findOne({
             where: {
                 name: INDEXES_NAMES.MIDCAP,
-                expiry: '2024-07-08', //data.expirey
+                expiry: data.expirey,
                 instrument_type: 'CE',
                 ltp: {
                     [Op.between]: [start, end],
@@ -122,7 +122,7 @@ export async function find_PE_SELL(data) {
         const PE_SELL = await db[MODEL.HEDGING_OPTIONS].findOne({
             where: {
                 name: INDEXES_NAMES.MIDCAP,
-                expiry: '2024-07-08', //data.expirey
+                expiry: data.expirey,
                 instrument_type: 'PE',
                 ltp: {
                     [Op.between]: [start, end],
@@ -150,7 +150,7 @@ export async function find_PE(data) {
         const PE = await db[MODEL.HEDGING_OPTIONS].findOne({
             where: {
                 name: INDEXES_NAMES.MIDCAP,
-                expiry: '2024-07-08', //data.expirey
+                expiry: data.expirey,
                 instrument_type: 'PE',
                 ltp: {
                     [Op.between]: [start, end],
@@ -177,7 +177,7 @@ export async function find_CE(data) {
         const CE = await db[MODEL.HEDGING_OPTIONS].findOne({
             where: {
                 name: INDEXES_NAMES.MIDCAP,
-                expiry: '2024-07-08', //data.expirey
+                expiry: data.expirey,
                 instrument_type: 'CE',
                 ltp: {
                     [Op.between]: [start, end],

@@ -41,6 +41,10 @@ export const positionModel = (sequelize) => {
             end_time: {
                 type: DataTypes.DATE,
             },
+            required_margin: {
+                type: DataTypes.FLOAT,
+                allowNull: true,
+            },
         },
         {
             paranoid: true,
