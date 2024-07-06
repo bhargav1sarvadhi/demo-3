@@ -280,14 +280,14 @@ class StrategyController {
                             console.timeEnd('trade_create');
                         } else {
                             logger.info(
-                                'ce pe ce_sell pe_sell not fount=d anyone',
+                                'ce pe ce_sell pe_sell not found anyone',
                             );
                         }
                     } else {
                         logger.info('priminum price is not matching');
                     }
                 } else {
-                    logger.error('Today is holiday');
+                    logger.info('Today is holiday');
                 }
             }
             // } else {

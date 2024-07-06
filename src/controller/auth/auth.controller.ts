@@ -46,13 +46,27 @@ class AuthController {
                 );
                 if (update === 1) {
                     console.log(update);
-                    // async function restartServer() {
-                    //     console.log('arrived in restart');
-                    // }
-                    // await execute('node restart app.ts');
-
-                    // Set timeout for one minute (60 seconds)
-                    // setTimeout(restartServer, 30 * 1000);
+                    async function restartServer() {
+                        console.log('arrived in restart');
+                        const fileName = 'restart.json';
+                        const data = {
+                            username: 'exampleUser',
+                            firstName: 'Example',
+                            lastName: 'User',
+                            email: 'example.user@example.com',
+                        };
+                        const folderPath = path.join(__dirname, '../../config');
+                        if (!fs.existsSync(folderPath)) {
+                            fs.mkdirSync(folderPath, { recursive: true });
+                        }
+                        const filePath = path.join(folderPath, fileName);
+                        fs.writeFileSync(
+                            filePath,
+                            JSON.stringify(data, null, 2),
+                            'utf-8',
+                        );
+                    }
+                    setTimeout(restartServer, 30 * 1000);
                 }
             }
 

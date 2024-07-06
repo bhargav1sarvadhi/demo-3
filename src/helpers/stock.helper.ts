@@ -197,7 +197,12 @@ export async function find_CE(data) {
 }
 
 export const findHedgingOptions = async ({ hedging_conditions, expirey }) => {
-    const CE_SELL = await find_CE_SELL({
+    let CE_SELL: { [key: string]: any } = {};
+    let PE_SELL: { [key: string]: any } = {};
+    let PE: { [key: string]: any } = {};
+    let CE: { [key: string]: any } = {};
+
+    CE_SELL = await find_CE_SELL({
         hedging_conditions,
         expirey,
     });
@@ -221,5 +226,5 @@ export const findHedgingOptions = async ({ hedging_conditions, expirey }) => {
             return { CE_SELL, PE_SELL, PE, CE };
         }
     }
-    return null;
+    return { CE_SELL, PE_SELL, PE, CE };
 };

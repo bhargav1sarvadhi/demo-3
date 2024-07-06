@@ -19,6 +19,7 @@ import './utils/cron.job';
 import { db } from './model';
 import { INDEXES, USER_DETAILS } from './constant/response.types';
 import { strategyController } from './controller';
+import './config/restart.json';
 
 let protobufRoot = null;
 let defaultClient = UpstoxClient.ApiClient.instance;
@@ -121,17 +122,31 @@ class AppServer {
                 resolve(ws);
 
                 setTimeout(async () => {
-                    const options = await db[MODEL.HEDGING_OPTIONS].findAll({});
-                    // const instrumentKeys = options.map(
-                    //     (option) => option.instrument_key,
-                    // );
+                    const options = await db[MODEL.HEDGING_OPTIONS].findAll({
+                        attributes: ['id', 'instrument_key'],
+                    });
+                    const strikes = await db[MODEL.STRIKE_MODEL].findAll({
+                        attributes: ['id', 'instrument_key'],
+                    });
+                    const instrumentKeys_stike = strikes.map(
+                        (option) => option.instrument_key,
+                    );
+                    const instrumentKeys = options.map(
+                        (option) => option.instrument_key,
+                    );
+                    const instrument_data_keys = [
+                        ...instrumentKeys_stike,
+                        ...instrumentKeys,
+                    ];
+                    console.log(instrument_data_keys);
+
                     const data = {
                         typr: '',
                         guid: 'someguid',
                         method: 'sub',
                         data: {
                             mode: 'ltpc',
-                            instrumentKeys: [INDEXES.BANKNIFTY],
+                            instrumentKeys: instrument_data_keys,
                         },
                     };
                     ws.send(Buffer.from(JSON.stringify(data)));
