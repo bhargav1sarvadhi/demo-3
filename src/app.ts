@@ -32,7 +32,7 @@ const port = process.env.PORT_SERVER || 8000;
 class AppServer {
     constructor() {
         const app: Express = express();
-        this.initWebSocket();
+        // this.initWebSocket();
         app.use(express.urlencoded({ extended: true }));
         app.use(express.json({}));
         app.use(
