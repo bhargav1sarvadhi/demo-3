@@ -1,4 +1,4 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code, and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
 name: Node.js CI
@@ -6,6 +6,7 @@ name: Node.js CI
 on:
   push:
     branches: ["main"]
+
 jobs:
   build:
 
@@ -17,12 +18,33 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: pm2 restart demo
+
+    - name: Install dependencies
+      run: |
+        npm ci
+        sudo chown -R $USER:$USER .
+
+    - name: Build
+      run: |
+        npm run build --if-present
+
+    - name: Restart PM2
+      run: |
+        pm2 restart demo || pm2 start app.js
+
+    - name: Test if PM2 restarted successfully
+      run: pm2 ls
+
+      # Add error handling and logging
+      if: ${{ failure() }}
+      run: echo "PM2 restart or start failed"
+
+    # Add more steps as necessary
