@@ -1,9 +1,11 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
 name: Node.js CI
 
 on:
   push:
     branches: ["main"]
-
 jobs:
   build:
 
@@ -15,20 +17,12 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - name: Forcefully delete node_modules
-      run: sudo rm -rf /home/ubuntu/actions-runner/_work/demo-3/demo-3/node_modules || true
-
     - uses: actions/checkout@v4
-
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-
-    - name: Check for package-lock.json
-      run: test -f package-lock.json || echo "Lock file not found!"
-
     - run: npm ci
     - run: npm run build --if-present
     - run: pm2 restart demo
