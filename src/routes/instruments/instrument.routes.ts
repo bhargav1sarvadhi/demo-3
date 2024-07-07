@@ -20,6 +20,14 @@ class InstrumentRoutes extends BaseRoute {
             END_POINTS.GET_STRIKE_TO_GENRATE_OPTIONS,
             instrumentsController.strike_to_genrate_options,
         );
+        this.router.post(
+            END_POINTS.HEDGING_INSTALL,
+            instrumentsController.insert_hedging_strategy,
+        );
+        this.router.post(
+            END_POINTS.CREATE_STRATEGY,
+            instrumentsController.strategy_create,
+        );
     }
 }
 export const instrumentRoutes = new InstrumentRoutes().router;
