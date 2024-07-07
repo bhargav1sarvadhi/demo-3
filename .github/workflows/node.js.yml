@@ -15,8 +15,8 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - name: Adjust permissions for node_modules/.bin
-      run: sudo chown -R $USER:$USER /home/ubuntu/actions-runner/_work/demo-3/demo-3/node_modules/.bin || true
+    - name: Forcefully delete node_modules
+      run: sudo rm -rf /home/ubuntu/actions-runner/_work/demo-3/demo-3/node_modules || true
 
     - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
