@@ -5,6 +5,7 @@ import { authController } from '../../controller/auth';
 class AuthRoutes extends BaseRoute {
     async initializeRoutes() {
         this.router.get(END_POINTS.BLANK, authController.upstock_login);
+        this.router.post(END_POINTS.TOKEN, authController.update_token);
     }
 }
 export const authRoutes = new AuthRoutes().router;

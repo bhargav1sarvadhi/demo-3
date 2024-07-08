@@ -18,4 +18,5 @@ export enum END_POINTS {
     HEDGING_INSTALL = '/hedging-time-table-install',
     STOCK = '/stock',
     CREATE_STRATEGY = '/create-strategy',
+    TOKEN ='/token',
 }

@@ -78,6 +78,50 @@ class AuthController {
             return next(error);
         }
     }
+
+    async update_token(req, res, next) {
+        try {
+            const {
+                body: {
+                    data: { token },
+                },
+            } = req;
+            const [update] = await db[MODEL.USER].update(
+                { token: token },
+                { where: { email: USER_DETAILS.EMAIL } },
+            );
+            if (update === 1) {
+                console.log(update);
+                async function restartServer() {
+                    console.log('arrived in restart');
+                    const fileName = 'restart.json';
+                    const data = {
+                        username: 'exampleUser',
+                        firstName: 'Example',
+                        lastName: 'User',
+                        email: 'example.user@example.com',
+                    };
+                    const folderPath = path.join(__dirname, '../../config');
+                    if (!fs.existsSync(folderPath)) {
+                        fs.mkdirSync(folderPath, { recursive: true });
+                    }
+                    const filePath = path.join(folderPath, fileName);
+                    fs.writeFileSync(
+                        filePath,
+                        JSON.stringify(data, null, 2),
+                        'utf-8',
+                    );
+                }
+                setTimeout(restartServer, 30 * 1000);
+            }
+            return sendResponse(res, {
+                responseType: RES_STATUS.CREATE,
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
 }
 
 export const authController = new AuthController();
