@@ -15,7 +15,7 @@ import { Op } from 'sequelize';
 import { INDEXES, USER_DETAILS } from '../constant/response.types';
 
 cron.schedule(
-    '40 19 * * *',
+    '10 00 * * *',
     async () => {
         try {
             const user = await db[MODEL.USER].findOne({
@@ -68,6 +68,67 @@ cron.schedule(
                     INDEXES_NAMES.NIFTY_50,
                 ],
             };
+
+            const rateLimiter = (function () {
+                let lastSecondRequests = 0;
+                let lastMinuteRequests = 0;
+                let last30MinutesRequests = 0;
+                let queue = [];
+                let timer;
+
+                const processQueue = async () => {
+                    if (queue.length === 0) {
+                        clearInterval(timer);
+                        timer = null;
+                        return;
+                    }
+
+                    const currentTime = Date.now();
+                    if (
+                        lastSecondRequests < 25 &&
+                        lastMinuteRequests < 250 &&
+                        last30MinutesRequests < 1000
+                    ) {
+                        const { fn, resolve } = queue.shift();
+                        lastSecondRequests++;
+                        lastMinuteRequests++;
+                        last30MinutesRequests++;
+                        fn().then(resolve);
+                    }
+
+                    setTimeout(() => {
+                        lastSecondRequests = Math.max(
+                            0,
+                            lastSecondRequests - 1,
+                        );
+                    }, 1000);
+                    setTimeout(() => {
+                        lastMinuteRequests = Math.max(
+                            0,
+                            lastMinuteRequests - 1,
+                        );
+                    }, 60000);
+                    setTimeout(() => {
+                        last30MinutesRequests = Math.max(
+                            0,
+                            last30MinutesRequests - 1,
+                        );
+                    }, 1800000);
+                };
+
+                const scheduleRequest = (fn) => {
+                    return new Promise((resolve) => {
+                        queue.push({ fn, resolve });
+                        if (!timer) {
+                            timer = setInterval(processQueue, 1000 / 25); // process queue with 25 requests per second rate
+                        }
+                    });
+                };
+
+                return {
+                    scheduleRequest,
+                };
+            })();
             const processOptions = async (options, accessToken) => {
                 const batchSize = 20; // Number of requests per minute
                 const delayBetweenBatches = 60000; // 1 minute delay in milliseconds
@@ -89,31 +150,38 @@ cron.schedule(
                             },
                             maxBodyLength: Infinity,
                         };
-                        const response = await axios(config);
-                        for (const key in response.data.data) {
-                            if (
-                                Object.prototype.hasOwnProperty.call(
-                                    response.data.data,
-                                    key,
-                                )
-                            ) {
-                                const lastPrice =
-                                    response.data.data[key].last_price;
-                                console.log(lastPrice);
-                                await db[MODEL.OPTIONS_CHAINS].update(
-                                    {
-                                        ltp: lastPrice,
-                                    },
-                                    {
-                                        where: {
-                                            instrument_key:
-                                                options_data.instrument_key,
-                                        },
-                                    },
-                                );
-                                break;
-                            }
-                        }
+                        await rateLimiter
+                            .scheduleRequest(() => axios(config))
+                            .then(async (response) => {
+                                for (const key in response['data'].data) {
+                                    if (
+                                        Object.prototype.hasOwnProperty.call(
+                                            response['data'].data,
+                                            key,
+                                        )
+                                    ) {
+                                        const lastPrice =
+                                            response['data'].data[key]
+                                                .last_price;
+
+                                        const update = await db[
+                                            MODEL.OPTIONS_CHAINS
+                                        ].update(
+                                            {
+                                                ltp: lastPrice,
+                                            },
+                                            {
+                                                where: {
+                                                    instrument_key:
+                                                        options_data.instrument_key,
+                                                },
+                                            },
+                                        );
+                                        console.log(lastPrice, update);
+                                        break;
+                                    }
+                                }
+                            });
                     });
 
                     await Promise.all(promises);
