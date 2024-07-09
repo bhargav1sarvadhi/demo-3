@@ -15,7 +15,7 @@ import { Op } from 'sequelize';
 import { INDEXES, USER_DETAILS } from '../constant/response.types';
 
 cron.schedule(
-    '10 0 * * *',
+    '40 19 * * *',
     async () => {
         try {
             const user = await db[MODEL.USER].findOne({
@@ -69,7 +69,7 @@ cron.schedule(
                 ],
             };
             const processOptions = async (options, accessToken) => {
-                const batchSize = 24; // Number of requests per minute
+                const batchSize = 20; // Number of requests per minute
                 const delayBetweenBatches = 60000; // 1 minute delay in milliseconds
 
                 for (let i = 0; i < options.length; i += batchSize) {
