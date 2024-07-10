@@ -8,6 +8,7 @@ import moment from 'moment';
 import {
     current_strike_price,
     get_current_day_name,
+    get_next_day_name,
     get_upcoming_expiry_date,
     strike_around_ce_pe,
 } from '../helpers';
@@ -15,7 +16,7 @@ import { Op } from 'sequelize';
 import { INDEXES, USER_DETAILS } from '../constant/response.types';
 
 cron.schedule(
-    '10 00 * * *',
+    '00 19 * * *',
     async () => {
         try {
             const user = await db[MODEL.USER].findOne({
@@ -31,41 +32,41 @@ cron.schedule(
             const indexes = {
                 MONDAY: [
                     INDEXES_NAMES.BANKNIFTY,
-                    INDEXES_NAMES.FINNITY,
-                    INDEXES_NAMES.NIFTY_50,
+                    // INDEXES_NAMES.FINNITY,
+                    // INDEXES_NAMES.NIFTY_50,
                 ],
                 TUESDAY: [
-                    INDEXES_NAMES.BANKNIFTY,
+                    // INDEXES_NAMES.BANKNIFTY,
                     INDEXES_NAMES.MIDCAP,
-                    INDEXES_NAMES.NIFTY_50,
+                    // INDEXES_NAMES.NIFTY_50,
                 ],
                 WEDNESDAY: [
-                    INDEXES_NAMES.FINNITY,
+                    // INDEXES_NAMES.FINNITY,
                     INDEXES_NAMES.MIDCAP,
-                    INDEXES_NAMES.NIFTY_50,
+                    // INDEXES_NAMES.NIFTY_50,
                 ],
                 THURSDAY: [
-                    INDEXES_NAMES.BANKNIFTY,
-                    INDEXES_NAMES.FINNITY,
+                    // INDEXES_NAMES.BANKNIFTY,
+                    // INDEXES_NAMES.FINNITY,
                     INDEXES_NAMES.MIDCAP,
                 ],
                 FRIDAY: [
-                    INDEXES_NAMES.BANKNIFTY,
-                    INDEXES_NAMES.FINNITY,
+                    // INDEXES_NAMES.BANKNIFTY,
+                    // INDEXES_NAMES.FINNITY,
                     INDEXES_NAMES.MIDCAP,
-                    INDEXES_NAMES.NIFTY_50,
+                    // INDEXES_NAMES.NIFTY_50,
                 ],
                 SATURDAY: [
-                    INDEXES_NAMES.BANKNIFTY,
-                    INDEXES_NAMES.FINNITY,
+                    // INDEXES_NAMES.BANKNIFTY,
+                    // INDEXES_NAMES.FINNITY,
                     INDEXES_NAMES.MIDCAP,
-                    INDEXES_NAMES.NIFTY_50,
+                    // INDEXES_NAMES.NIFTY_50,
                 ],
                 SUNDAY: [
-                    INDEXES_NAMES.BANKNIFTY,
-                    INDEXES_NAMES.FINNITY,
+                    // INDEXES_NAMES.BANKNIFTY,
+                    // INDEXES_NAMES.FINNITY,
                     INDEXES_NAMES.MIDCAP,
-                    INDEXES_NAMES.NIFTY_50,
+                    // INDEXES_NAMES.NIFTY_50,
                 ],
             };
 
@@ -233,7 +234,7 @@ cron.schedule(
                     }
                 }),
             );
-            logger.info('Optoins Chains updated successfully.');
+            // logger.info('Optoins Chains updated successfully.');
 
             for (let indexes_name of INDEXES_NAME) {
                 const expirey_date = await get_upcoming_expiry_date(
@@ -249,17 +250,18 @@ cron.schedule(
 
             // step 3 : start options get
             const currnet_day = get_current_day_name();
+            const next_day = get_next_day_name();
             let options = [];
             console.log(indexes[currnet_day]);
             await Promise.all(
-                indexes[currnet_day].map(async (indexes_names) => {
+                indexes[next_day].map(async (indexes_names) => {
                     const expirey_date = await get_upcoming_expiry_date(
                         indexes_names,
                     );
                     const find_hedging_module = await db[
                         MODEL.HEDGING_TIME
                     ].findOne({
-                        where: { day: currnet_day, index_name: indexes_names },
+                        where: { day: next_day, index_name: indexes_names },
                     });
                     const options_datas = await db[
                         MODEL.OPTIONS_CHAINS
@@ -416,6 +418,23 @@ cron.schedule(
                 }
             }
             logger.info('Strike Price Updated job started.');
+        } catch (error) {
+            logger.error('Error in cron send request', error);
+        }
+    },
+    {
+        timezone: 'Asia/Kolkata',
+    },
+);
+cron.schedule(
+    '55 15 * * *',
+    async () => {
+        try {
+            const hedging_options = await db[MODEL.HEDGING_OPTIONS].destroy({
+                where: {},
+                force: true,
+            });
+            logger.info('All hedging options deleted successfully.');
         } catch (error) {
             logger.error('Error in cron send request', error);
         }

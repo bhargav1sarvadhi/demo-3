@@ -27,6 +27,14 @@ export const get_current_day_name = () => {
     const dayName = currentISTDate.format('dddd').toUpperCase();
     return dayName;
 };
+export const get_next_day_name = () => {
+    const currentUTCDate = moment.utc();
+    const currentISTDate = currentUTCDate.add(5, 'hours').add(30, 'minutes');
+    const nextISTDate = currentISTDate.add(1, 'days');
+    const formattedDate = nextISTDate.format('YYYY-MM-DD');
+    const dayName = nextISTDate.format('dddd').toUpperCase();
+    return dayName;
+};
 
 export const strike_around_ce_pe = (current_strike, limit) => {
     const roundedStrike = Math.round(current_strike / 100) * 100;
