@@ -50,6 +50,10 @@ export const positionModel = (sequelize) => {
             paranoid: true,
         },
     );
-
+    positionModel.associate = (models) => {
+        positionModel.hasMany(models.tradeModel, {
+            foreignKey: 'position_id',
+        });
+    };
     return positionModel;
 };
