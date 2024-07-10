@@ -16,7 +16,7 @@ import { Op } from 'sequelize';
 import { INDEXES, STRATEGY, USER_DETAILS } from '../constant/response.types';
 
 cron.schedule(
-    '15 21 * * *',
+    '25 21 * * *',
     async () => {
         try {
             const user = await db[MODEL.USER].findOne({
