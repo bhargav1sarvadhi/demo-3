@@ -13,10 +13,10 @@ import {
     strike_around_ce_pe,
 } from '../helpers';
 import { Op } from 'sequelize';
-import { INDEXES, USER_DETAILS } from '../constant/response.types';
+import { INDEXES, STRATEGY, USER_DETAILS } from '../constant/response.types';
 
 cron.schedule(
-    '00 19 * * *',
+    '15 21 * * *',
     async () => {
         try {
             const user = await db[MODEL.USER].findOne({
@@ -435,6 +435,120 @@ cron.schedule(
                 force: true,
             });
             logger.info('All hedging options deleted successfully.');
+        } catch (error) {
+            logger.error('Error in cron send request', error);
+        }
+    },
+    {
+        timezone: 'Asia/Kolkata',
+    },
+);
+cron.schedule(
+    '20 15 * * *',
+    async () => {
+        try {
+            const find_strategy = await db[MODEL.POSITION].findOne({
+                where: {
+                    strategy_name: STRATEGY.PERCENTAGE,
+                    is_active: true,
+                },
+            });
+            if (find_strategy.is_active) {
+                const find_trade = await db[MODEL.TRADE].findAll({
+                    where: {
+                        strategy_name: STRATEGY.PERCENTAGE,
+                        is_active: true,
+                    },
+                });
+                if (find_trade.length > 0) {
+                    let CE_SELL_PL = 0;
+                    let PE_SELL_PL = 0;
+                    let CE_PL = 0;
+                    let PE_PL = 0;
+                    await Promise.all(
+                        find_trade.map(async (trade) => {
+                            if (trade.trade_type === 'SELL') {
+                                if (trade.instrument_type === 'CE') {
+                                    const diff = trade.buy_price - trade.ltp;
+                                    const lot = trade.lot_size * trade.qty;
+                                    CE_SELL_PL = diff * lot;
+                                    await db[MODEL.TRADE].update(
+                                        { pl: CE_SELL_PL },
+                                        { where: { id: trade.id } },
+                                    );
+                                } else {
+                                    const diff = trade.buy_price - trade.ltp;
+                                    const lot = trade.lot_size * trade.qty;
+                                    PE_SELL_PL = diff * lot;
+                                    await db[MODEL.TRADE].update(
+                                        { pl: PE_SELL_PL },
+                                        { where: { id: trade.id } },
+                                    );
+                                }
+                            } else {
+                                if (trade.instrument_type === 'CE') {
+                                    const diff = trade.ltp - trade.buy_price;
+                                    const lot = trade.lot_size * trade.qty;
+                                    CE_PL = diff * lot;
+                                    await db[MODEL.TRADE].update(
+                                        { pl: CE_PL },
+                                        { where: { id: trade.id } },
+                                    );
+                                } else {
+                                    const diff = trade.ltp - trade.buy_price;
+                                    const lot = trade.lot_size * trade.qty;
+                                    PE_PL = diff * lot;
+                                    await db[MODEL.TRADE].update(
+                                        { pl: PE_PL },
+                                        { where: { id: trade.id } },
+                                    );
+                                }
+                            }
+                        }),
+                    );
+
+                    find_trade.map(async (trade) => {
+                        await db[MODEL.TRADE].update(
+                            {
+                                is_active: false,
+                                sell_price: trade.ltp,
+                            },
+                            {
+                                where: { id: trade.id },
+                            },
+                        );
+                    });
+                    const PL = CE_SELL_PL + PE_SELL_PL + CE_PL + PE_PL;
+                    find_trade.map(async (trade) => {
+                        await db[MODEL.TRADE].update(
+                            {
+                                is_active: false,
+                                sell_price: trade.ltp,
+                            },
+                            {
+                                where: { id: trade.id },
+                            },
+                        );
+                    });
+
+                    await db[MODEL.POSITION].update(
+                        { is_active: false },
+                        { where: { id: find_strategy.id } },
+                    );
+
+                    await db[MODEL.POSITION].update(
+                        { is_active: false },
+                        { where: { id: find_strategy.id } },
+                    );
+                }
+            } else {
+                logger.info(
+                    'Not any available Postions becuase market time is reach 3:20 PM',
+                );
+            }
+            logger.info(
+                'Postions closed all trade sell successfully becuase market time is reach 3:20 PM',
+            );
         } catch (error) {
             logger.error('Error in cron send request', error);
         }

@@ -26,7 +26,7 @@ class StrategyController {
             const formattedDate = currentISTDate.format('YYYY-MM-DD');
             const currentTime = currentISTDate.format('HH:mm');
             const startTime = moment('09:15', 'HH:mm');
-            const endTime = moment('15:25', 'HH:mm');
+            const endTime = moment('15:20', 'HH:mm');
             if (currentISTDate.isBetween(startTime, endTime)) {
                 const find_strategy = await db[MODEL.POSITION].findOne({
                     where: {
