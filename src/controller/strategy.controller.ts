@@ -142,8 +142,10 @@ class StrategyController {
                     );
                     console.timeEnd('postion check');
                 } else {
-                    console.time('trade_create');
+                    console.time('trade_created');
                     const currnet_day = get_current_day_name();
+                    console.log(currnet_day);
+
                     const expirey = await get_upcoming_expiry_date(
                         INDEXES_NAMES.MIDCAP,
                     );
@@ -280,7 +282,7 @@ class StrategyController {
                                     );
                                     logger.error('Trade Placement failed');
                                 }
-                                console.timeEnd('trade_create');
+                                console.timeEnd('trade_created');
                             } else {
                                 logger.info(
                                     'ce pe ce_sell pe_sell not found anyone',

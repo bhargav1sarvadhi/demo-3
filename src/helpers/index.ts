@@ -14,6 +14,7 @@ import {
     find_PE_SELL,
     generate_premium_range,
     get_current_day_name,
+    get_next_day_name,
     get_upcoming_expiry_date,
     strike_around_ce_pe,
 } from './stock.helper';
@@ -36,4 +37,5 @@ export {
     find_CE,
     find_PE,
     findHedgingOptions,
+    get_next_day_name,
 };

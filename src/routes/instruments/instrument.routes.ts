@@ -28,6 +28,10 @@ class InstrumentRoutes extends BaseRoute {
             END_POINTS.CREATE_STRATEGY,
             instrumentsController.strategy_create,
         );
+        this.router.delete(
+            END_POINTS.DELETE_HEDGING_OPTIONS,
+            instrumentsController.hedging_options_removes,
+        );
     }
 }
 export const instrumentRoutes = new InstrumentRoutes().router;

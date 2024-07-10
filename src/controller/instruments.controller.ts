@@ -456,6 +456,22 @@ class InstrumentsController {
             return next(error);
         }
     }
+
+    async hedging_options_removes(req, res, next) {
+        try {
+            const hedging_options = await db[MODEL.HEDGING_OPTIONS].destroy({
+                where: {},
+                force: true,
+            });
+            return sendResponse(res, {
+                responseType: RES_STATUS.CREATE,
+                // data: strategy,
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
 }
 
 export const instrumentsController = new InstrumentsController();
