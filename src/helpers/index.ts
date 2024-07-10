@@ -17,6 +17,7 @@ import {
     get_next_day_name,
     get_upcoming_expiry_date,
     strike_around_ce_pe,
+    strike_around_start_end,
 } from './stock.helper';
 import { validateReq } from './validation.helper';
 
@@ -38,4 +39,5 @@ export {
     find_PE,
     findHedgingOptions,
     get_next_day_name,
+    strike_around_start_end,
 };

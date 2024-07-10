@@ -20,4 +20,7 @@ export enum END_POINTS {
     CREATE_STRATEGY = '/create-strategy',
     TOKEN = '/token',
     DELETE_HEDGING_OPTIONS = '/delete-hedging-options',
+    DASHBOARD_API = '/dashboard',
+    POSTIONS_DATA = '/postions',
+    STRATEGY_LIST = '/strategy-list',
 }

@@ -11,12 +11,13 @@ import {
     get_next_day_name,
     get_upcoming_expiry_date,
     strike_around_ce_pe,
+    strike_around_start_end,
 } from '../helpers';
 import { Op } from 'sequelize';
 import { INDEXES, STRATEGY, USER_DETAILS } from '../constant/response.types';
 
 cron.schedule(
-    '25 21 * * *',
+    '05 16 * * *',
     async () => {
         try {
             const user = await db[MODEL.USER].findOne({
@@ -273,8 +274,10 @@ cron.schedule(
                                 [Op.or]: [
                                     {
                                         [Op.between]: [
-                                            find_hedging_module?.premium_start,
-                                            find_hedging_module?.premium_end,
+                                            find_hedging_module?.premium_start -
+                                                5,
+                                            find_hedging_module?.premium_end +
+                                                5,
                                         ],
                                     },
                                     {
@@ -294,7 +297,8 @@ cron.schedule(
                 }),
             );
             const current_strike = await current_strike_price(INDEXES.MIDCAP);
-            const strikePrices = strike_around_ce_pe(current_strike, 10);
+            // const strikePrices = strike_around_ce_pe(current_strike, 10);
+            const strikePrices = strike_around_start_end(12392, 5);
             const expirey_date = await get_upcoming_expiry_date(
                 INDEXES_NAMES.MIDCAP,
             );
@@ -303,14 +307,20 @@ cron.schedule(
                     [Op.or]: [
                         {
                             strike_price: {
-                                [Op.in]: strikePrices.CE,
+                                [Op.between]: [
+                                    strikePrices.start_strike_ce,
+                                    strikePrices.end_strike_ce,
+                                ],
                             },
 
                             instrument_type: 'CE',
                         },
                         {
                             strike_price: {
-                                [Op.in]: strikePrices.PE,
+                                [Op.between]: [
+                                    strikePrices.start_strike_pe,
+                                    strikePrices.end_strike_pe,
+                                ],
                             },
                             instrument_type: 'PE',
                         },

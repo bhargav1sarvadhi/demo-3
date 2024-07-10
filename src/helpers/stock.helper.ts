@@ -49,6 +49,20 @@ export const strike_around_ce_pe = (current_strike, limit) => {
     return strikePrices;
 };
 
+export const strike_around_start_end = (current_strike, limit) => {
+    const roundedStrike = Math.round(current_strike / 100) * 100;
+    const startStrikeCE = roundedStrike;
+    const endStrikeCE = roundedStrike + limit * 100;
+    const startStrikePE = roundedStrike;
+    const endStrikePE = roundedStrike - limit * 100;
+    return {
+        start_strike_ce: startStrikeCE,
+        end_strike_ce: endStrikeCE,
+        start_strike_pe: startStrikePE,
+        end_strike_pe: endStrikePE,
+    };
+};
+
 export const current_strike_price = async (instrument_key) => {
     try {
         const user = await db[MODEL.USER].findOne({

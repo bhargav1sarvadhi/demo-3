@@ -3,6 +3,7 @@ import { END_POINTS, ERRORTYPES, RES_TYPES, ROLES } from '../constant/index';
 import { AppError } from '../utils';
 import { instrumentRoutes } from './instruments/instrument.routes';
 import { authRoutes } from './auth/auth.routes';
+import { dashboardRoutes } from './dashboard/dashboard.routes';
 
 class InvalidedRouter {
     handleRequest(req, res, next) {
@@ -26,6 +27,7 @@ class MainRouter {
     setupRoutes() {
         this.router.use(END_POINTS.INSTRUMENT, instrumentRoutes);
         this.router.use(END_POINTS.STOCK, authRoutes);
+        this.router.use(END_POINTS.DASHBOARD_API, dashboardRoutes);
         this.router.all(END_POINTS.ALL, (req, res, next) =>
             this.invalidedRouter.handleRequest(req, res, next),
         );

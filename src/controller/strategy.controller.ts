@@ -135,6 +135,23 @@ class StrategyController {
                             { is_active: false },
                             { where: { id: find_strategy.id } },
                         );
+                        // const current_bal = await db[MODEL.STRATEGY].findOne({
+                        //     where: {
+                        //         strategy_name: STRATEGY.PERCENTAGE,
+                        //     },
+                        // });
+                        // await db[MODEL.STRATEGY].update(
+                        //     {
+                        //         strategy_balance:
+                        //             current_bal?.strategy_balance -
+                        //             hedging_conditions?.required_margin * 2,
+                        //     },
+                        //     {
+                        //         where: {
+                        //             strategy_name: STRATEGY.PERCENTAGE,
+                        //         },
+                        //     },
+                        // );
                     }
                     await db[MODEL.POSITION].update(
                         { pl: PL },
@@ -180,7 +197,7 @@ class StrategyController {
                                     MODEL.POSITION
                                 ].create({
                                     strategy_id:
-                                        '701c47fd-ec15-4cbb-bd7d-85db6790f401',
+                                        'f3254597-f223-45ff-a60f-37322425895d',
                                     strategy_name: STRATEGY.PERCENTAGE,
                                     is_active: true,
                                     qty: 2,
@@ -258,6 +275,27 @@ class StrategyController {
                                 });
 
                                 if (ce_sell && pe_sell && ce && pe) {
+                                    // const current_bal = await db[
+                                    //     MODEL.STRATEGY
+                                    // ].findOne({
+                                    //     where: {
+                                    //         strategy_name: STRATEGY.PERCENTAGE,
+                                    //     },
+                                    // });
+                                    // await db[MODEL.STRATEGY].update(
+                                    //     {
+                                    //         strategy_balance:
+                                    //             current_bal?.strategy_balance -
+                                    //             hedging_conditions?.required_margin *
+                                    //                 2,
+                                    //     },
+                                    //     {
+                                    //         where: {
+                                    //             strategy_name:
+                                    //                 STRATEGY.PERCENTAGE,
+                                    //         },
+                                    //     },
+                                    // );
                                     logger.info('Trade Placed successfully');
                                 } else {
                                     await db[MODEL.TRADE].update(

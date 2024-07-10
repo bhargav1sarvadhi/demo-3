@@ -74,5 +74,14 @@ export const tradeModel = (sequelize) => {
         },
     );
 
+    tradeModel.associate = (models) => {
+        tradeModel.belongsTo(models.positionModel, {
+            foreignKey: 'position_id',
+        });
+        tradeModel.belongsTo(models.OptionchainModel, {
+            foreignKey: 'options_chain_id',
+        });
+    };
+
     return tradeModel;
 };
