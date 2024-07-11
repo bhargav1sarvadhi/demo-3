@@ -1,15 +1,62 @@
 import axios from 'axios';
-import { MODEL, RES_STATUS, USER_DETAILS } from '../../constant';
-import { sendResponse } from '../../utils';
+import {
+    ERRORTYPES,
+    MODEL,
+    RES_STATUS,
+    RES_TYPES,
+    ROLES,
+    USER_DETAILS,
+} from '../../constant';
+import { AppError, sendResponse } from '../../utils';
 import { UpstoxClient } from 'upstox-js-sdk';
 import { db } from '../../model';
 import * as childProcess from 'child_process';
 import util from 'util';
 import path from 'path';
 import fs from 'fs';
+import { TokenController } from '../../config/passport.jwt';
 const execute = util.promisify(childProcess.exec);
 
 class AuthController {
+    async login(req, res, next) {
+        try {
+            const {
+                body: {
+                    data: { email, password },
+                },
+            } = req;
+            const result = await db[MODEL.USER].findOne({
+                where: { email },
+            });
+            if (result && result.password === password) {
+                const payload = {
+                    id: result.id,
+                    Email: result.email,
+                    phone: result.phone,
+                };
+                const token = await TokenController.createToken(payload, next);
+                await db[MODEL.USER].update(
+                    { login_token: token },
+                    { where: { id: result.id } },
+                );
+                return sendResponse(res, {
+                    responseType: RES_STATUS.GET,
+                    data: {
+                        token: token,
+                        id: result.id,
+                        email: result.email,
+                    },
+                    message: res.__('common').login,
+                });
+            } else {
+                return next(
+                    new AppError(RES_TYPES.AUTH_FAIL, ERRORTYPES.UNAUTHORIZED),
+                );
+            }
+        } catch (error) {
+            return next(error);
+        }
+    }
     async upstock_login(req, res, next) {
         try {
             const {
