@@ -8,10 +8,10 @@ module.exports = {
             [
                 {
                     id: '5104c9d9-abe1-4a2c-9d4b-a37e5262eb1c',
-                    name: 'Bhargav Makwana',
-                    email: 'bhargav9183@gmail.com',
-                    password: 'BHARGAV@@@##1234',
-                    phone: '9978863413',
+                    name: '########',
+                    email: '#########',
+                    password: '##########',
+                    phone: '##########',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     deletedAt: null,

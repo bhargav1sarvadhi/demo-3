@@ -137,12 +137,8 @@ class InstrumentsController {
                         where: { day: next_day, index_name: indexes_names },
                     });
                     console.log(
-                        find_hedging_module?.premium_start - 5,
-                        find_hedging_module?.premium_end + 5,
-                    );
-                    console.log(
                         find_hedging_module?.premium_start / 10,
-                        find_hedging_module?.premium_end / 10,
+                        find_hedging_module?.premium_end + 5,
                     );
 
                     const options_datas = await db[
@@ -152,24 +148,7 @@ class InstrumentsController {
                             expiry: expirey_date,
                             name: indexes_names,
                             ltp: {
-                                [Op.or]: [
-                                    {
-                                        [Op.between]: [
-                                            find_hedging_module?.premium_start -
-                                                5,
-                                            find_hedging_module?.premium_end +
-                                                5,
-                                        ],
-                                    },
-                                    {
-                                        [Op.between]: [
-                                            find_hedging_module?.premium_start /
-                                                10,
-                                            find_hedging_module?.premium_end /
-                                                10,
-                                        ],
-                                    },
-                                ],
+                                [Op.between]: [1, 50],
                             },
                         },
                         order: [['strike_price', 'ASC']],
@@ -178,7 +157,7 @@ class InstrumentsController {
                 }),
             );
             // console.log(options);
-            const start = strike_around_start_end(12392, 5);
+            const start = strike_around_start_end(12432, 10);
             const expirey_date = await get_upcoming_expiry_date(
                 INDEXES_NAMES.MIDCAP,
             );
@@ -212,36 +191,47 @@ class InstrumentsController {
             });
 
             options = [...options, ...find_options];
+            const uniqueOptions = Array.from(
+                options
+                    .reduce(
+                        (map, item) => map.set(item.trading_symbol, item),
+                        new Map(),
+                    )
+                    .values(),
+            );
+            uniqueOptions.sort((a, b) => a['strike_price'] - b['strike_price']);
+
+            console.log(uniqueOptions.length, 'unique options');
 
             // await Promise.all(
-            //     options.map(async (data) => {
+            //     uniqueOptions.map(async (data) => {
             //         await db[MODEL.HEDGING_OPTIONS].create({
-            //             options_chain_id: data.id,
-            //             name: data.name,
-            //             segment: data.segment,
-            //             exchange: data.exchange,
-            //             expiry: data.expiry,
-            //             weekly: data.weekly,
-            //             instrument_key: data.instrument_key,
-            //             exchange_token: data.exchange_token,
-            //             trading_symbol: data.trading_symbol,
-            //             tick_size: data.tick_size,
-            //             lot_size: data.lot_size,
-            //             instrument_type: data.instrument_type,
-            //             freeze_quantity: data.freeze_quantity,
-            //             underlying_type: data.underlying_type,
-            //             underlying_key: data.underlying_key,
-            //             underlying_symbol: data.underlying_symbol,
-            //             strike_price: data.strike_price,
-            //             ltp: data.ltp,
-            //             minimum_lot: data.minimum_lot,
+            //             options_chain_id: data['id'],
+            //             name: data['name'],
+            //             segment: data['segment'],
+            //             exchange: data['exchange'],
+            //             expiry: data['expiry'],
+            //             weekly: data['weekly'],
+            //             instrument_key: data['instrument_key'],
+            //             exchange_token: data['exchange_token'],
+            //             trading_symbol: data['trading_symbol'],
+            //             tick_size: data['tick_size'],
+            //             lot_size: data['lot_size'],
+            //             instrument_type: data['instrument_type'],
+            //             freeze_quantity: data['freeze_quantity'],
+            //             underlying_type: data['underlying_type'],
+            //             underlying_key: data['underlying_key'],
+            //             underlying_symbol: data['underlying_symbol'],
+            //             strike_price: data['strike_price'],
+            //             ltp: data['ltp'],
+            //             minimum_lot: data['minimum_lot'],
             //         });
             //     }),
             // );
 
             return sendResponse(res, {
                 responseType: RES_STATUS.CREATE,
-                data: options,
+                data: uniqueOptions,
                 message: res.__('instruments').insert,
             });
         } catch (error) {

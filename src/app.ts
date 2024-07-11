@@ -1,6 +1,7 @@
 import express, { Express } from 'express';
 import fileUpload from 'express-fileupload';
 import './config/database';
+import http, { request } from 'http';
 import * as dotenv from 'dotenv';
 dotenv.config();
 import { logger } from './logger/logger';
@@ -17,9 +18,11 @@ import * as UpstoxClient from 'upstox-js-sdk';
 import protobuf from 'protobufjs';
 import './utils/cron.job';
 import { db } from './model';
+import { Server } from 'socket.io';
 import { INDEXES, USER_DETAILS } from './constant/response.types';
 import { strategyController } from './controller';
 import './config/restart.json';
+import moment from 'moment';
 
 let protobufRoot = null;
 let defaultClient = UpstoxClient.ApiClient.instance;
@@ -30,9 +33,21 @@ let OAUTH2 = defaultClient.authentications['OAUTH2'];
 const port = process.env.PORT_SERVER || 8000;
 
 class AppServer {
+    private io: Server;
     constructor() {
         const app: Express = express();
+        const server = http.createServer(app);
         this.initWebSocket();
+        const io = new Server(server, {
+            cors: {
+                origin: '*',
+            },
+        });
+        this.io = io;
+        this.io.on('connection', async (socket) => {
+            // socket.emit('stock_data', stocks_data);
+            socket.on('disconnect', () => {});
+        });
         app.use(express.urlencoded({ extended: true }));
         app.use(express.json({}));
         app.use(
@@ -58,7 +73,7 @@ class AppServer {
         app.use(passport.session());
         app.use(END_POINTS.MAIN, routes);
         app.use(ErrorHandler);
-        app.listen(port, () => {
+        server.listen(port, () => {
             logger.info(`🚀 Server is listening on Port:- ${port}`);
         });
     }
@@ -138,8 +153,7 @@ class AppServer {
                         ...instrumentKeys_stike,
                         ...instrumentKeys,
                     ];
-                    console.log(instrument_data_keys);
-
+                    console.log(instrument_data_keys.length);
                     const data = {
                         typr: '',
                         guid: 'someguid',
@@ -158,7 +172,7 @@ class AppServer {
             });
 
             ws.on('message', async (data) => {
-                console.log(JSON.stringify(this.decodeProfobuf(data)));
+                // console.log(JSON.stringify(this.decodeProfobuf(data)));
                 const stocks_data: any = this.decodeProfobuf(data);
                 if (stocks_data && stocks_data.feeds) {
                     for (const key in stocks_data.feeds) {
@@ -191,8 +205,29 @@ class AppServer {
                     console.log('No feeds data available');
                 }
                 strategyController.percentage_strategy();
-            });
+                strategyController.percentage_without_contions_strategy();
+                // console.log(this.io);
 
+                const postions = async () => {
+                    const postions = await db[MODEL.POSITION].findAll({
+                        include: [
+                            {
+                                model: db[MODEL.TRADE],
+                            },
+                        ],
+                        where: {
+                            date: moment().format('YYYY-MM-DD'),
+                        },
+                        order: [['date', 'DESC']],
+                    });
+                    const totalPL = postions.reduce((sum, position) => {
+                        return sum + position.pl;
+                    }, 0);
+                    // console.log('Total PL:', totalPL);
+                    this.io.emit('stock_data', { postions, PL: totalPL });
+                };
+                postions();
+            });
             ws.on('error', (error) => {
                 console.error('WebSocket error:', error);
                 reject(error);

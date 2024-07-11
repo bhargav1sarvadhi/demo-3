@@ -32,9 +32,10 @@ cron.schedule(
             ];
             const indexes = {
                 MONDAY: [
-                    INDEXES_NAMES.BANKNIFTY,
+                    // INDEXES_NAMES.BANKNIFTY,
                     // INDEXES_NAMES.FINNITY,
                     // INDEXES_NAMES.NIFTY_50,
+                    INDEXES_NAMES.MIDCAP,
                 ],
                 TUESDAY: [
                     // INDEXES_NAMES.BANKNIFTY,
@@ -271,24 +272,7 @@ cron.schedule(
                             expiry: expirey_date,
                             name: indexes_names,
                             ltp: {
-                                [Op.or]: [
-                                    {
-                                        [Op.between]: [
-                                            find_hedging_module?.premium_start -
-                                                5,
-                                            find_hedging_module?.premium_end +
-                                                5,
-                                        ],
-                                    },
-                                    {
-                                        [Op.between]: [
-                                            find_hedging_module?.premium_start /
-                                                10,
-                                            find_hedging_module?.premium_end /
-                                                10,
-                                        ],
-                                    },
-                                ],
+                                [Op.between]: [1, 50],
                             },
                         },
                         order: [['strike_price', 'ASC']],
@@ -298,7 +282,7 @@ cron.schedule(
             );
             const current_strike = await current_strike_price(INDEXES.MIDCAP);
             // const strikePrices = strike_around_ce_pe(current_strike, 10);
-            const strikePrices = strike_around_start_end(12392, 5);
+            const strikePrices = strike_around_start_end(current_strike, 10);
             const expirey_date = await get_upcoming_expiry_date(
                 INDEXES_NAMES.MIDCAP,
             );
@@ -330,28 +314,37 @@ cron.schedule(
                 },
             });
             options = [...options, ...find_options];
+            const uniqueOptions = Array.from(
+                options
+                    .reduce(
+                        (map, item) => map.set(item.trading_symbol, item),
+                        new Map(),
+                    )
+                    .values(),
+            );
+            uniqueOptions.sort((a, b) => a['strike_price'] - b['strike_price']);
             await Promise.all(
-                options.map(async (data) => {
+                uniqueOptions.map(async (data) => {
                     await db[MODEL.HEDGING_OPTIONS].create({
-                        options_chain_id: data.id,
-                        name: data.name,
-                        segment: data.segment,
-                        exchange: data.exchange,
-                        expiry: data.expiry,
-                        weekly: data.weekly,
-                        instrument_key: data.instrument_key,
-                        exchange_token: data.exchange_token,
-                        trading_symbol: data.trading_symbol,
-                        tick_size: data.tick_size,
-                        lot_size: data.lot_size,
-                        instrument_type: data.instrument_type,
-                        freeze_quantity: data.freeze_quantity,
-                        underlying_type: data.underlying_type,
-                        underlying_key: data.underlying_key,
-                        underlying_symbol: data.underlying_symbol,
-                        strike_price: data.strike_price,
-                        ltp: data.ltp,
-                        minimum_lot: data.minimum_lot,
+                        options_chain_id: data['id'],
+                        name: data['name'],
+                        segment: data['segment'],
+                        exchange: data['exchange'],
+                        expiry: data['expiry'],
+                        weekly: data['weekly'],
+                        instrument_key: data['instrument_key'],
+                        exchange_token: data['exchange_token'],
+                        trading_symbol: data['trading_symbol'],
+                        tick_size: data['tick_size'],
+                        lot_size: data['lot_size'],
+                        instrument_type: data['instrument_type'],
+                        freeze_quantity: data['freeze_quantity'],
+                        underlying_type: data['underlying_type'],
+                        underlying_key: data['underlying_key'],
+                        underlying_symbol: data['underlying_symbol'],
+                        strike_price: data['strike_price'],
+                        ltp: data['ltp'],
+                        minimum_lot: data['minimum_lot'],
                     });
                 }),
             );
@@ -457,13 +450,25 @@ cron.schedule(
     '20 15 * * *',
     async () => {
         try {
+            const currnet_day = get_current_day_name();
+            const hedging_conditions = await db[MODEL.HEDGING_TIME].findOne({
+                where: {
+                    index_name: INDEXES_NAMES.MIDCAP,
+                    day: currnet_day,
+                },
+            });
+            const current_bal = await db[MODEL.STRATEGY].findOne({
+                where: {
+                    strategy_name: STRATEGY.PERCENTAGE,
+                },
+            });
             const find_strategy = await db[MODEL.POSITION].findOne({
                 where: {
                     strategy_name: STRATEGY.PERCENTAGE,
                     is_active: true,
                 },
             });
-            if (find_strategy.is_active) {
+            if (find_strategy && find_strategy.is_active) {
                 const find_trade = await db[MODEL.TRADE].findAll({
                     where: {
                         strategy_name: STRATEGY.PERCENTAGE,
@@ -529,26 +534,22 @@ cron.schedule(
                         );
                     });
                     const PL = CE_SELL_PL + PE_SELL_PL + CE_PL + PE_PL;
-                    find_trade.map(async (trade) => {
-                        await db[MODEL.TRADE].update(
-                            {
-                                is_active: false,
-                                sell_price: trade.ltp,
-                            },
-                            {
-                                where: { id: trade.id },
-                            },
-                        );
-                    });
-
                     await db[MODEL.POSITION].update(
                         { is_active: false },
                         { where: { id: find_strategy.id } },
                     );
-
-                    await db[MODEL.POSITION].update(
-                        { is_active: false },
-                        { where: { id: find_strategy.id } },
+                    await db[MODEL.STRATEGY].update(
+                        {
+                            strategy_balance:
+                                current_bal?.strategy_balance +
+                                PL +
+                                hedging_conditions?.required_margin * 2,
+                        },
+                        {
+                            where: {
+                                strategy_name: STRATEGY.PERCENTAGE,
+                            },
+                        },
                     );
                 }
             } else {
