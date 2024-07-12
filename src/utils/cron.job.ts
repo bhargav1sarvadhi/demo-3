@@ -180,7 +180,7 @@ cron.schedule(
                                                 },
                                             },
                                         );
-                                        console.log(lastPrice, update);
+                                        // console.log(lastPrice, update);
                                         break;
                                     }
                                 }
@@ -190,11 +190,11 @@ cron.schedule(
                     await Promise.all(promises);
 
                     if (i + batchSize < options.length) {
-                        console.log(
-                            `Waiting for ${
-                                delayBetweenBatches / 1000
-                            } seconds before next batch...`,
-                        );
+                        // console.log(
+                        //     `Waiting for ${
+                        //         delayBetweenBatches / 1000
+                        //     } seconds before next batch...`,
+                        // );
                         await new Promise((resolve) =>
                             setTimeout(resolve, delayBetweenBatches),
                         );
@@ -245,7 +245,7 @@ cron.schedule(
                 const options = await db[MODEL.OPTIONS_CHAINS].findAll({
                     where: { name: indexes_name, expiry: expirey_date },
                 });
-                console.log(options.length, indexes_name);
+                // console.log(options.length, indexes_name);
                 await processOptions(options, accessToken);
             }
             logger.info('Optoins Chains Price updated successfully.');
