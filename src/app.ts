@@ -39,7 +39,6 @@ class AppServer {
         const server = http.createServer(app);
         this.initWebSocket();
         const io = new Server(server, {
-            path: '/api/socket',
             cors: {
                 origin: '*',
             },
