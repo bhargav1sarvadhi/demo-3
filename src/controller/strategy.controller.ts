@@ -17,7 +17,7 @@ import moment from 'moment';
 class StrategyController {
     async percentage_strategy() {
         try {
-            console.log('Percentage strategy calling');
+            // console.log('Percentage strategy calling');
             const istOffset = 5.5 * 60 * 60 * 1000;
             const currentUTCDate = moment.utc();
             const currentISTDate = currentUTCDate
@@ -116,7 +116,7 @@ class StrategyController {
                         });
 
                         await db[MODEL.POSITION].update(
-                            { is_active: false },
+                            { is_active: false, end_time: moment() },
                             { where: { id: find_strategy.id } },
                         );
                     }
@@ -138,7 +138,7 @@ class StrategyController {
                             );
                         });
                         await db[MODEL.POSITION].update(
-                            { is_active: false },
+                            { is_active: false, end_time: moment() },
                             { where: { id: find_strategy.id } },
                         );
                         const current_bal = await db[MODEL.STRATEGY].findOne({
@@ -341,7 +341,7 @@ class StrategyController {
                     }
                 }
             } else {
-                logger.error('Market Time is closed');
+                // logger.error('Market Time is closed');
             }
         } catch (error) {
             throw new AppError(error.message, ERRORTYPES.UNKNOWN_ERROR);
@@ -349,7 +349,7 @@ class StrategyController {
     }
     async percentage_without_contions_strategy() {
         try {
-            console.log('Percentage without condtoins strategy calling');
+            // console.log('Percentage without condtoins strategy calling');
             const istOffset = 5.5 * 60 * 60 * 1000;
             const currentUTCDate = moment.utc();
             const currentISTDate = currentUTCDate
@@ -451,7 +451,7 @@ class StrategyController {
                         });
 
                         await db[MODEL.POSITION].update(
-                            { is_active: false },
+                            { is_active: false, end_time: moment() },
                             { where: { id: find_strategy.id } },
                         );
                     }
@@ -473,7 +473,7 @@ class StrategyController {
                             );
                         });
                         await db[MODEL.POSITION].update(
-                            { is_active: false },
+                            { is_active: false, end_time: moment() },
                             { where: { id: find_strategy.id } },
                         );
                         const current_bal = await db[MODEL.STRATEGY].findOne({
@@ -681,7 +681,7 @@ class StrategyController {
                     }
                 }
             } else {
-                logger.error('Market Time is closed');
+                // logger.error('Market Time is closed');
             }
         } catch (error) {
             throw new AppError(error.message, ERRORTYPES.UNKNOWN_ERROR);
