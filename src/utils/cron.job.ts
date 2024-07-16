@@ -140,7 +140,7 @@ cron.schedule(
                     const batch = options.slice(i, i + batchSize);
 
                     const promises = batch.map(async (options_data) => {
-                        console.log(options_data.instrument_key);
+                        // console.log(options_data.instrument_key);
                         const config = {
                             method: 'get',
                             url: 'https://api.upstox.com/v2/market-quote/ltp',
