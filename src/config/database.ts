@@ -19,7 +19,7 @@ const dbConfig: DBConfig = {
     DB_DIALECT: process.env.DB_DIALECT,
 };
 
-console.log(process.env.DB_DIALECT);
+// console.log(process.env.DB_DIALECT);
 
 export const sequelize = new Sequelize(
     dbConfig.DB_NAME,
