@@ -23,4 +23,5 @@ export enum END_POINTS {
     DASHBOARD_API = '/dashboard',
     POSTIONS_DATA = '/postions',
     STRATEGY_LIST = '/strategy-list',
+    ADD_HEDGING_OPTIONS = '/add-hedging-options',
 }

@@ -23,6 +23,7 @@ import {
     strike_around_ce_pe,
     strike_around_start_end,
 } from '../helpers';
+import { options } from 'joi';
 const csv = require('csv-parser');
 
 class InstrumentsController {
@@ -522,6 +523,93 @@ class InstrumentsController {
             return sendResponse(res, {
                 responseType: RES_STATUS.CREATE,
                 // data: strategy,
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+
+    async get_add_hedging_options_list(req, res, next) {
+        try {
+            const INDEXES_NAME = [
+                'FINNIFTY',
+                'BANKNIFTY',
+                'NIFTY',
+                'MIDCPNIFTY',
+            ];
+            await Promise.all(
+                INDEXES_NAME.map(async (indexes) => {
+                    const expirey_date = await get_upcoming_expiry_date(
+                        indexes,
+                    );
+                    const options_datas = await db[
+                        MODEL.OPTIONS_CHAINS
+                    ].findAll({
+                        where: {
+                            expiry: expirey_date,
+                            name: indexes,
+                        },
+                        order: [['strike_price', 'ASC']],
+                    });
+                    console.log(options_datas.length, indexes);
+                    if (options_datas.length > 0) {
+                        await Promise.all(
+                            options_datas.map(async (data) => {
+                                const [finded, created] = await db[
+                                    MODEL.HEDGING_OPTIONS
+                                ].findOrCreate({
+                                    where: { options_chain_id: data.id },
+                                    defaults: {
+                                        options_chain_id: data['id'],
+                                        name: data['name'],
+                                        segment: data['segment'],
+                                        exchange: data['exchange'],
+                                        expiry: data['expiry'],
+                                        weekly: data['weekly'],
+                                        instrument_key: data['instrument_key'],
+                                        exchange_token: data['exchange_token'],
+                                        trading_symbol: data['trading_symbol'],
+                                        tick_size: data['tick_size'],
+                                        lot_size: data['lot_size'],
+                                        instrument_type:
+                                            data['instrument_type'],
+                                        freeze_quantity:
+                                            data['freeze_quantity'],
+                                        underlying_type:
+                                            data['underlying_type'],
+                                        underlying_key: data['underlying_key'],
+                                        underlying_symbol:
+                                            data['underlying_symbol'],
+                                        strike_price: data['strike_price'],
+                                        ltp: data['ltp'],
+                                        minimum_lot: data['minimum_lot'],
+                                    },
+                                });
+                                // console.log(finded?.id, 'finded');
+                                // console.log(created?.id, 'created');
+                            }),
+                        );
+                        const delete_hedgs = await db[
+                            MODEL.HEDGING_OPTIONS
+                        ].destroy({
+                            where: {
+                                name: indexes,
+                                expiry: {
+                                    [Op.notIn]: [expirey_date],
+                                },
+                            },
+                            force: true,
+                        });
+                        // console.log('deleted hedgs', delete_hedgs);
+                    }
+                }),
+            );
+
+            const data = await db[MODEL.HEDGING_OPTIONS].findAll({});
+            return sendResponse(res, {
+                responseType: RES_STATUS.GET,
+                data: data,
                 message: res.__('instruments').insert,
             });
         } catch (error) {
