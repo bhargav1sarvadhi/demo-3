@@ -13,6 +13,10 @@ import {
 import { logger } from '../logger/logger';
 import { Op } from 'sequelize';
 import moment from 'moment';
+import {
+    createNewStrategy,
+    handleExistingStrategy,
+} from '../helpers/stock.helper';
 
 class StrategyController {
     async percentage_strategy() {
@@ -682,6 +686,53 @@ class StrategyController {
                 }
             } else {
                 // logger.error('Market Time is closed');
+            }
+        } catch (error) {
+            throw new AppError(error.message, ERRORTYPES.UNKNOWN_ERROR);
+        }
+    }
+
+    async percentage_strategy_testing() {
+        try {
+            const istOffset = 5.5 * 60 * 60 * 1000;
+            const currentUTCDate = moment.utc();
+            const currentISTDate = currentUTCDate
+                .add(5, 'hours')
+                .add(30, 'minutes');
+            const formattedDate = currentISTDate.format('YYYY-MM-DD');
+            const currentTime = currentISTDate.format('HH:mm');
+            const startTime = moment('09:15', 'HH:mm');
+            const endTime = moment('15:20', 'HH:mm');
+            const currentDay = get_current_day_name();
+
+            const hedgingConditions = await db[MODEL.HEDGING_TIME].findOne({
+                where: {
+                    index_name: INDEXES_NAMES.MIDCAP,
+                    day: currentDay,
+                },
+            });
+
+            // if (!currentISTDate.isBetween(startTime, endTime)) {
+            //     // Market time is closed
+            //     return;
+            // }
+
+            const strategy = await db[MODEL.POSITION].findOne({
+                where: {
+                    strategy_name: STRATEGY.PERCENTAGE,
+                    is_active: true,
+                },
+            });
+
+            if (strategy) {
+                await handleExistingStrategy(strategy, hedgingConditions);
+            } else {
+                await createNewStrategy(
+                    formattedDate,
+                    currentISTDate,
+                    currentDay,
+                    hedgingConditions,
+                );
             }
         } catch (error) {
             throw new AppError(error.message, ERRORTYPES.UNKNOWN_ERROR);

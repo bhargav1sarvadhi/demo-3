@@ -1,5 +1,11 @@
 import { AppError } from '../utils';
-import { ERRORTYPES, INDEXES_NAMES, MODEL, USER_DETAILS } from '../constant';
+import {
+    ERRORTYPES,
+    INDEXES_NAMES,
+    MODEL,
+    STRATEGY,
+    USER_DETAILS,
+} from '../constant';
 import { db } from '../model';
 import moment from 'moment';
 import { Op } from 'sequelize';
@@ -250,3 +256,252 @@ export const findHedgingOptions = async ({ hedging_conditions, expirey }) => {
     }
     return { CE_SELL, PE_SELL, PE, CE };
 };
+
+export async function closeTrades(trades, strategy) {
+    await Promise.all(
+        trades.map(async (trade) => {
+            await db[MODEL.TRADE].update(
+                {
+                    is_active: false,
+                    sell_price: trade.ltp,
+                },
+                {
+                    where: { id: trade.id },
+                },
+            );
+        }),
+    );
+
+    await db[MODEL.POSITION].update(
+        { is_active: false, end_time: moment() },
+        { where: { id: strategy.id } },
+    );
+}
+
+export async function achieveTarget(
+    trades,
+    strategy,
+    totalPL,
+    hedgingConditions,
+) {
+    console.log(
+        'Congratulations! target has been successfully achieved. A profit of 1% has been booked on this trade.',
+    );
+
+    await Promise.all(
+        trades.map(async (trade) => {
+            await db[MODEL.TRADE].update(
+                {
+                    is_active: false,
+                    sell_price: trade.ltp,
+                },
+                {
+                    where: { id: trade.id },
+                },
+            );
+        }),
+    );
+
+    await db[MODEL.POSITION].update(
+        { is_active: false, end_time: moment() },
+        { where: { id: strategy.id } },
+    );
+
+    const currentBalance = await db[MODEL.STRATEGY].findOne({
+        where: {
+            strategy_name: STRATEGY.PERCENTAGE,
+        },
+    });
+
+    await db[MODEL.STRATEGY].update(
+        {
+            strategy_balance:
+                currentBalance.strategy_balance +
+                totalPL +
+                hedgingConditions.required_margin * 2,
+        },
+        {
+            where: {
+                strategy_name: STRATEGY.PERCENTAGE,
+            },
+        },
+    );
+}
+
+export async function handleExistingStrategy(strategy, hedgingConditions) {
+    const trades = await db[MODEL.TRADE].findAll({
+        where: {
+            strategy_name: STRATEGY.PERCENTAGE,
+            is_active: true,
+        },
+    });
+
+    let CE_SELL_PL = 0;
+    let PE_SELL_PL = 0;
+    let CE_PL = 0;
+    let PE_PL = 0;
+
+    await Promise.all(
+        trades.map(async (trade) => {
+            const diff =
+                trade.trade_type === 'SELL'
+                    ? trade.buy_price - trade.ltp
+                    : trade.ltp - trade.buy_price;
+            const lot = trade.lot_size * trade.qty;
+            const pl = diff * lot;
+
+            if (trade.trade_type === 'SELL') {
+                if (trade.instrument_type === 'CE') {
+                    CE_SELL_PL = pl;
+                } else {
+                    PE_SELL_PL = pl;
+                }
+            } else {
+                if (trade.instrument_type === 'CE') {
+                    CE_PL = pl;
+                } else {
+                    PE_PL = pl;
+                }
+            }
+
+            await db[MODEL.TRADE].update({ pl }, { where: { id: trade.id } });
+        }),
+    );
+
+    const tradesToClose = trades.filter(
+        (trade) => trade.trade_type === 'SELL' && trade.ltp >= trade.stop_loss,
+    );
+
+    if (tradesToClose.length > 0) {
+        await closeTrades(trades, strategy);
+    }
+
+    const totalPL = CE_SELL_PL + PE_SELL_PL + CE_PL + PE_PL;
+    const target = strategy.required_margin * 0.01;
+
+    if (totalPL > target) {
+        await achieveTarget(trades, strategy, totalPL, hedgingConditions);
+    }
+
+    await db[MODEL.POSITION].update(
+        { pl: totalPL },
+        { where: { id: strategy.id } },
+    );
+    console.log('CHECKED');
+}
+
+export async function createNewStrategy(
+    formattedDate,
+    currentISTDate,
+    currentDay,
+    hedgingConditions,
+) {
+    const excludeDays = ['SUNDAY', 'SATURDAY'];
+
+    if (excludeDays.includes(currentDay)) {
+        console.log('Today is holiday');
+        return;
+    }
+
+    const expiry = await get_upcoming_expiry_date(INDEXES_NAMES.MIDCAP);
+    const strike = await db[MODEL.STRIKE_MODEL].findAll({});
+    const totalStrikePrice = strike.reduce(
+        (sum, strike) => sum + strike.ltp,
+        0,
+    );
+    console.log('premium_price  ' + totalStrikePrice);
+
+    if (totalStrikePrice <= hedgingConditions.market_premium) {
+        console.log('premium price is not matching');
+        return;
+    }
+
+    const { CE_SELL, PE_SELL, PE, CE } = await findHedgingOptions({
+        hedging_conditions: hedgingConditions,
+        expirey: expiry,
+    });
+
+    if (!CE_SELL || !PE_SELL || !CE || !PE) {
+        console.log('CE, PE, CE_SELL, PE_SELL not found');
+        return;
+    }
+
+    const position = await db[MODEL.POSITION].create({
+        strategy_id: 'f3254597-f223-45ff-a60f-37322425895d',
+        strategy_name: STRATEGY.PERCENTAGE,
+        is_active: true,
+        qty: 2,
+        trade_id: Math.floor(100000 + Math.random() * 900000),
+        date: formattedDate,
+        start_time: currentISTDate,
+        required_margin: hedgingConditions.required_margin * 2,
+    });
+
+    const trades = await Promise.all([
+        createTrade(position.id, CE_SELL, 'SELL'),
+        createTrade(position.id, PE_SELL, 'SELL'),
+        createTrade(position.id, CE, 'BUY'),
+        createTrade(position.id, PE, 'BUY'),
+    ]);
+
+    if (trades.every((trade) => trade)) {
+        const currentBalance = await db[MODEL.STRATEGY].findOne({
+            where: {
+                strategy_name: STRATEGY.PERCENTAGE,
+            },
+        });
+
+        await db[MODEL.STRATEGY].update(
+            {
+                strategy_balance:
+                    currentBalance.strategy_balance -
+                    hedgingConditions.required_margin * 2,
+            },
+            {
+                where: {
+                    strategy_name: STRATEGY.PERCENTAGE,
+                },
+            },
+        );
+
+        console.log('Trade Placed successfully');
+    } else {
+        await rollbackTrades(position, trades);
+        console.error('Trade Placement failed');
+    }
+}
+
+export async function createTrade(positionId, option, tradeType) {
+    return db[MODEL.TRADE].create({
+        position_id: positionId,
+        options_chain_id: option.options_chain_id,
+        trade_id: positionId.trade_id,
+        strategy_name: STRATEGY.PERCENTAGE,
+        trading_symbol: option.trading_symbol,
+        instrument_key: option.instrument_key,
+        instrument_type: option.instrument_type,
+        trade_type: tradeType,
+        buy_price: option.ltp,
+        stop_loss: tradeType === 'SELL' ? option.ltp * 2 : 0,
+        is_active: true,
+        ltp: option.ltp,
+        qty: 2,
+        lot_size: option.lot_size,
+    });
+}
+
+export async function rollbackTrades(position, trades) {
+    await Promise.all(
+        trades.map(async (trade) => {
+            await db[MODEL.TRADE].update(
+                { is_active: false },
+                { where: { id: trade?.id } },
+            );
+        }),
+    );
+
+    await db[MODEL.POSITION].update(
+        { is_active: false },
+        { where: { id: position?.id } },
+    );
+}

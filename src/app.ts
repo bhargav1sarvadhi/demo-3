@@ -187,18 +187,18 @@ class AppServer {
                                 },
                                 { where: { instrument_key: key } },
                             );
-                            const strike_update = await db[
-                                MODEL.STRIKE_MODEL
-                            ].update(
-                                {
-                                    ltp: ltp,
-                                },
-                                { where: { instrument_key: key } },
-                            );
-                            await db[MODEL.TRADE].update(
-                                { ltp: ltp },
-                                { where: { instrument_key: key } },
-                            );
+                            // const strike_update = await db[
+                            //     MODEL.STRIKE_MODEL
+                            // ].update(
+                            //     {
+                            //         ltp: ltp,
+                            //     },
+                            //     { where: { instrument_key: key } },
+                            // );
+                            // await db[MODEL.TRADE].update(
+                            //     { ltp: ltp },
+                            //     { where: { instrument_key: key } },
+                            // );
                         }
                     }
                 } else {
@@ -206,6 +206,7 @@ class AppServer {
                 }
                 strategyController.percentage_strategy();
                 strategyController.percentage_without_contions_strategy();
+                strategyController.percentage_strategy_testing();
                 // console.log(this.io);
 
                 const postions = async () => {
