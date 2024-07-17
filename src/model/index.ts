@@ -17,7 +17,7 @@ Object.keys(models).forEach((modelName) => {
     db[fileName] = models[modelName](sequelize);
 });
 Object.keys(db).forEach(function (modelName) {
-    logger.info(modelName);
+    // logger.info(modelName);
     if (db[modelName].associate) {
         db[modelName].associate(db);
     }
