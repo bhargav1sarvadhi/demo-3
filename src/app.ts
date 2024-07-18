@@ -23,17 +23,20 @@ import { INDEXES, USER_DETAILS } from './constant/response.types';
 import { strategyController } from './controller';
 import './config/restart.json';
 import moment from 'moment';
+import { debounce } from 'lodash';
 
 let protobufRoot = null;
 let defaultClient = UpstoxClient.ApiClient.instance;
 let apiVersion = '2.0';
 let OAUTH2 = defaultClient.authentications['OAUTH2'];
+let updateBuffer = {};
 // OAUTH2.accessToken = process.env.OAUTH2_ACCESS_TOKEN;
 
 const port = process.env.PORT_SERVER || 8000;
 
 class AppServer {
     private io: Server;
+
     constructor() {
         const app: Express = express();
         const server = http.createServer(app);
@@ -106,6 +109,60 @@ class AppServer {
             }
         });
     }
+    bufferUpdates = (key, ltp) => {
+        updateBuffer[key] = ltp;
+    };
+
+    flushUpdates = debounce(async () => {
+        const hedgingUpdates = [];
+        const strikeUpdates = [];
+        const tradeUpdates = [];
+        // console.log(updateBuffer);
+
+        for (const key in updateBuffer) {
+            const ltp = updateBuffer[key];
+            hedgingUpdates.push({ instrument_key: key, ltp });
+            strikeUpdates.push({ instrument_key: key, ltp });
+            tradeUpdates.push({ instrument_key: key, ltp });
+        }
+
+        const transaction = await db.sequelize.transaction();
+        try {
+            for (const update of hedgingUpdates) {
+                await db[MODEL.HEDGING_OPTIONS].update(
+                    { ltp: update.ltp },
+                    {
+                        where: { instrument_key: update.instrument_key },
+                        transaction,
+                    },
+                );
+            }
+            for (const update of strikeUpdates) {
+                await db[MODEL.STRIKE_MODEL].update(
+                    { ltp: update.ltp },
+                    {
+                        where: { instrument_key: update.instrument_key },
+                        transaction,
+                    },
+                );
+            }
+            for (const update of tradeUpdates) {
+                await db[MODEL.TRADE].update(
+                    { ltp: update.ltp },
+                    {
+                        where: { instrument_key: update.instrument_key },
+                        transaction,
+                    },
+                );
+            }
+            await transaction.commit();
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Bulk update error:', error);
+        }
+        updateBuffer = {};
+        // console.log('done flush call', updateBuffer);
+    }, 1000);
 
     initProtobuf = async () => {
         protobufRoot = await protobuf.load(__dirname + '/MarketDataFeed.proto');
@@ -179,31 +236,14 @@ class AppServer {
                         if (stocks_data.feeds.hasOwnProperty(key)) {
                             const instrument_key = stocks_data.feeds[key];
                             const ltp = instrument_key?.ltpc?.ltp;
-                            const update = await db[
-                                MODEL.HEDGING_OPTIONS
-                            ].update(
-                                {
-                                    ltp: ltp,
-                                },
-                                { where: { instrument_key: key } },
-                            );
-                            const strike_update = await db[
-                                MODEL.STRIKE_MODEL
-                            ].update(
-                                {
-                                    ltp: ltp,
-                                },
-                                { where: { instrument_key: key } },
-                            );
-                            await db[MODEL.TRADE].update(
-                                { ltp: ltp },
-                                { where: { instrument_key: key } },
-                            );
+                            this.bufferUpdates(key, ltp);
                         }
+                        this.flushUpdates();
                     }
                 } else {
                     console.log('No feeds data available');
                 }
+
                 strategyController.percentage_strategy();
                 strategyController.percentage_without_contions_strategy();
                 // console.log(this.io);
