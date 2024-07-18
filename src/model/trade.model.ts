@@ -71,6 +71,11 @@ export const tradeModel = (sequelize) => {
         },
         {
             paranoid: true,
+            indexes: [
+                {
+                    fields: ['instrument_key'],
+                },
+            ],
         },
     );
 
