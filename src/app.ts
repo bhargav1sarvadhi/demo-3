@@ -22,6 +22,7 @@ import { Server } from 'socket.io';
 import { INDEXES, USER_DETAILS } from './constant/response.types';
 import { strategyController } from './controller';
 import './config/restart.json';
+import cron from 'node-cron';
 import moment from 'moment';
 import { debounce } from 'lodash';
 
@@ -33,6 +34,7 @@ let updateBuffer = {};
 // OAUTH2.accessToken = process.env.OAUTH2_ACCESS_TOKEN;
 
 const port = process.env.PORT_SERVER || 8000;
+const stocks = new Map<string, any>();
 
 class AppServer {
     private io: Server;
@@ -109,60 +111,6 @@ class AppServer {
             }
         });
     }
-    bufferUpdates = (key, ltp) => {
-        updateBuffer[key] = ltp;
-    };
-
-    flushUpdates = debounce(async () => {
-        const hedgingUpdates = [];
-        const strikeUpdates = [];
-        const tradeUpdates = [];
-        // console.log(updateBuffer);
-
-        for (const key in updateBuffer) {
-            const ltp = updateBuffer[key];
-            hedgingUpdates.push({ instrument_key: key, ltp });
-            strikeUpdates.push({ instrument_key: key, ltp });
-            tradeUpdates.push({ instrument_key: key, ltp });
-        }
-
-        const transaction = await db.sequelize.transaction();
-        try {
-            for (const update of hedgingUpdates) {
-                await db[MODEL.HEDGING_OPTIONS].update(
-                    { ltp: update.ltp },
-                    {
-                        where: { instrument_key: update.instrument_key },
-                        transaction,
-                    },
-                );
-            }
-            for (const update of strikeUpdates) {
-                await db[MODEL.STRIKE_MODEL].update(
-                    { ltp: update.ltp },
-                    {
-                        where: { instrument_key: update.instrument_key },
-                        transaction,
-                    },
-                );
-            }
-            for (const update of tradeUpdates) {
-                await db[MODEL.TRADE].update(
-                    { ltp: update.ltp },
-                    {
-                        where: { instrument_key: update.instrument_key },
-                        transaction,
-                    },
-                );
-            }
-            await transaction.commit();
-        } catch (error) {
-            await transaction.rollback();
-            console.error('Bulk update error:', error);
-        }
-        updateBuffer = {};
-        // console.log('done flush call', updateBuffer);
-    }, 1000);
 
     initProtobuf = async () => {
         protobufRoot = await protobuf.load(__dirname + '/MarketDataFeed.proto');
@@ -192,7 +140,6 @@ class AppServer {
             ws.on('open', () => {
                 console.log('connected');
                 resolve(ws);
-
                 setTimeout(async () => {
                     const options = await db[MODEL.HEDGING_OPTIONS].findAll({
                         attributes: ['id', 'instrument_key'],
@@ -236,9 +183,8 @@ class AppServer {
                         if (stocks_data.feeds.hasOwnProperty(key)) {
                             const instrument_key = stocks_data.feeds[key];
                             const ltp = instrument_key?.ltpc?.ltp;
-                            this.bufferUpdates(key, ltp);
+                            stocks.set(key, ltp);
                         }
-                        this.flushUpdates();
                     }
                 } else {
                     console.log('No feeds data available');
@@ -276,3 +222,24 @@ class AppServer {
     }
 }
 new AppServer();
+cron.schedule('*/2 * * * * *', () => {
+    stocks.forEach(async (ltp, key) => {
+        const update = await db[MODEL.HEDGING_OPTIONS].update(
+            {
+                ltp: ltp,
+            },
+            { where: { instrument_key: key } },
+        );
+
+        const strike_update = await db[MODEL.STRIKE_MODEL].update(
+            {
+                ltp: ltp,
+            },
+            { where: { instrument_key: key } },
+        );
+        await db[MODEL.TRADE].update(
+            { ltp: ltp },
+            { where: { instrument_key: key } },
+        );
+    });
+});
