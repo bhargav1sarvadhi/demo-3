@@ -19,10 +19,7 @@ class StrategyController {
         try {
             // console.log('Percentage strategy calling');
             const istOffset = 5.5 * 60 * 60 * 1000;
-            const currentUTCDate = moment.utc();
-            const currentISTDate = currentUTCDate
-                .add(5, 'hours')
-                .add(30, 'minutes');
+            const currentISTDate = moment().utcOffset('+05:30');
             const formattedDate = currentISTDate.format('YYYY-MM-DD');
             const currentTime = currentISTDate.format('HH:mm');
             const startTime = moment('09:15', 'HH:mm');
@@ -179,7 +176,7 @@ class StrategyController {
                         (sum, strike) => sum + strike.ltp,
                         0,
                     );
-                    console.log('primuem_price  ' + totalStrikePrice);
+                    // console.log('primuem_price  ' + totalStrikePrice);
                     if (!exclude_days.includes(currnet_day)) {
                         const hedging_conditions = await db[
                             MODEL.HEDGING_TIME
@@ -334,7 +331,7 @@ class StrategyController {
                                 );
                             }
                         } else {
-                            logger.info('priminum price is not matching');
+                            // logger.info('priminum price is not matching');
                         }
                     } else {
                         logger.info('Today is holiday');
@@ -351,10 +348,7 @@ class StrategyController {
         try {
             // console.log('Percentage without condtoins strategy calling');
             const istOffset = 5.5 * 60 * 60 * 1000;
-            const currentUTCDate = moment.utc();
-            const currentISTDate = currentUTCDate
-                .add(5, 'hours')
-                .add(30, 'minutes');
+            const currentISTDate = moment().utcOffset('+05:30');
             const formattedDate = currentISTDate.format('YYYY-MM-DD');
             const currentTime = currentISTDate.format('HH:mm');
             const startTime = moment('09:15', 'HH:mm');

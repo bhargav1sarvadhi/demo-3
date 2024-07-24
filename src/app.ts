@@ -223,23 +223,32 @@ class AppServer {
 }
 new AppServer();
 cron.schedule('*/2 * * * * *', () => {
-    stocks.forEach(async (ltp, key) => {
-        const update = await db[MODEL.HEDGING_OPTIONS].update(
-            {
-                ltp: ltp,
-            },
-            { where: { instrument_key: key } },
-        );
+    const currentISTDate = moment().utcOffset('+05:30');
+    const formattedDate = currentISTDate.format('YYYY-MM-DD');
+    const currentTime = currentISTDate.format('HH:mm');
+    const startTime = moment('09:15', 'HH:mm');
+    const endTime = moment('15:20', 'HH:mm');
+    if (currentISTDate.isBetween(startTime, endTime)) {
+        stocks.forEach(async (ltp, key) => {
+            const update = await db[MODEL.HEDGING_OPTIONS].update(
+                {
+                    ltp: ltp,
+                },
+                { where: { instrument_key: key } },
+            );
 
-        const strike_update = await db[MODEL.STRIKE_MODEL].update(
-            {
-                ltp: ltp,
-            },
-            { where: { instrument_key: key } },
-        );
-        await db[MODEL.TRADE].update(
-            { ltp: ltp },
-            { where: { instrument_key: key } },
-        );
-    });
+            const strike_update = await db[MODEL.STRIKE_MODEL].update(
+                {
+                    ltp: ltp,
+                },
+                { where: { instrument_key: key } },
+            );
+            await db[MODEL.TRADE].update(
+                { ltp: ltp },
+                { where: { instrument_key: key } },
+            );
+        });
+    } else {
+        // console.log('market close');
+    }
 });

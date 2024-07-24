@@ -529,6 +529,58 @@ class InstrumentsController {
             return next(error);
         }
     }
+    async strike_genrate(req, res, next) {
+        try {
+            const current_strike = await current_strike_price(INDEXES.MIDCAP);
+            const expirey_date = await get_upcoming_expiry_date(
+                INDEXES_NAMES.MIDCAP,
+            );
+            const roundedStrike = Math.round(current_strike / 100) * 100;
+            const find_options = await db[MODEL.OPTIONS_CHAINS].findAll({
+                where: {
+                    expiry: expirey_date,
+                    name: INDEXES_NAMES.MIDCAP,
+                    strike_price: roundedStrike,
+                },
+            });
+            await db[MODEL.STRIKE_MODEL].destroy({
+                where: {},
+                force: true,
+            });
+            for (let data of find_options) {
+                const current_strike = await current_strike_price(
+                    data.instrument_key,
+                );
+                await db[MODEL.STRIKE_MODEL].create({
+                    name: data.name,
+                    segment: data.segment,
+                    exchange: data.exchange,
+                    expiry: data.expiry,
+                    weekly: data.weekly,
+                    instrument_key: data.instrument_key,
+                    exchange_token: data.exchange_token,
+                    trading_symbol: data.trading_symbol,
+                    tick_size: data.tick_size,
+                    lot_size: data.lot_size,
+                    instrument_type: data.instrument_type,
+                    freeze_quantity: data.freeze_quantity,
+                    underlying_type: data.underlying_type,
+                    underlying_key: data.underlying_key,
+                    underlying_symbol: data.underlying_symbol,
+                    strike_price: data.strike_price,
+                    ltp: current_strike,
+                    minimum_lot: data.minimum_lot,
+                });
+            }
+            return sendResponse(res, {
+                responseType: RES_STATUS.CREATE,
+                // data: strategy,
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
 
     async get_add_hedging_options_list(req, res, next) {
         try {
