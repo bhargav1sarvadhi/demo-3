@@ -25,6 +25,7 @@ import './config/restart.json';
 import cron from 'node-cron';
 import moment from 'moment';
 import { debounce } from 'lodash';
+import { getCurrentISTDate, getISTTime } from './helpers';
 
 let protobufRoot = null;
 let defaultClient = UpstoxClient.ApiClient.instance;
@@ -199,23 +200,14 @@ class AppServer {
 }
 new AppServer();
 cron.schedule('*/2 * * * * *', () => {
-    const currentISTDate = moment().utcOffset('+05:30');
-    const formattedDate = currentISTDate.format('YYYY-MM-DD');
-    const currentTime = currentISTDate.format('HH:mm');
-
-    // Combine date and time for startTime and endTime
-    const startTime = moment(
-        `${formattedDate} 09:15`,
-        'YYYY-MM-DD HH:mm',
-    ).utcOffset('+05:30');
-    const endTime = moment(
-        `${formattedDate} 15:20`,
-        'YYYY-MM-DD HH:mm',
-    ).utcOffset('+05:30');
-
-    console.log(currentISTDate.format(), startTime.format(), endTime.format());
-    console.log(currentISTDate.isBetween(startTime, endTime));
-    if (currentISTDate.isBetween(startTime, endTime)) {
+    const currentISTDate = getCurrentISTDate();
+    const formattedDate = currentISTDate.toISOString().slice(0, 10);
+    const currentTime = getISTTime(currentISTDate);
+    const startTime = new Date(`${formattedDate}T09:15:00+05:30`);
+    const endTime = new Date(`${formattedDate}T15:20:00+05:30`);
+    console.log(currentISTDate, startTime, endTime);
+    console.log(currentISTDate >= startTime && currentISTDate <= endTime);
+    if (currentISTDate >= startTime && currentISTDate <= endTime) {
         stocks.forEach(async (ltp, key) => {
             const update = await db[MODEL.HEDGING_OPTIONS].update(
                 {
@@ -234,7 +226,6 @@ cron.schedule('*/2 * * * * *', () => {
                 { ltp: ltp },
                 { where: { instrument_key: key } },
             );
-            console.log(update, strike_update);
         });
     } else {
         // console.log('market close');

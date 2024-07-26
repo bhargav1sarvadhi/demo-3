@@ -250,3 +250,49 @@ export const findHedgingOptions = async ({ hedging_conditions, expirey }) => {
     }
     return { CE_SELL, PE_SELL, PE, CE };
 };
+
+export function getCurrentISTDate() {
+    const now = new Date();
+    const options: any = {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    };
+    const formatter = new Intl.DateTimeFormat('en-GB', options);
+    const [
+        { value: day },
+        ,
+        { value: month },
+        ,
+        { value: year },
+        ,
+        { value: hour },
+        ,
+        { value: minute },
+        ,
+        { value: second },
+    ] = formatter.formatToParts(now);
+
+    return new Date(
+        `${year}-${month}-${day}T${hour}:${minute}:${second}+05:30`,
+    );
+}
+
+// Helper function to get the time part of a date in IST
+export function getISTTime(date) {
+    const options: any = {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    };
+    const formatter = new Intl.DateTimeFormat('en-GB', options);
+    const [{ value: hour }, , { value: minute }] =
+        formatter.formatToParts(date);
+    return `${hour}:${minute}`;
+}
