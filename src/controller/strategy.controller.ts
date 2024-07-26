@@ -7,6 +7,8 @@ import {
     find_CE_SELL,
     find_PE,
     find_PE_SELL,
+    getCurrentISTDate,
+    getISTTime,
     get_current_day_name,
     get_upcoming_expiry_date,
 } from '../helpers';
@@ -18,12 +20,11 @@ class StrategyController {
     async percentage_strategy() {
         try {
             // console.log('Percentage strategy calling');
-            const istOffset = 5.5 * 60 * 60 * 1000;
-            const currentISTDate = moment().utcOffset('+05:30');
-            const formattedDate = currentISTDate.format('YYYY-MM-DD');
-            const currentTime = currentISTDate.format('HH:mm');
-            const startTime = moment('09:15', 'HH:mm');
-            const endTime = moment('15:20', 'HH:mm');
+            const currentISTDate = getCurrentISTDate();
+            const formattedDate = currentISTDate.toISOString().slice(0, 10);
+            const currentTime = getISTTime(currentISTDate);
+            const startTime = new Date(`${formattedDate}T09:15:00+05:30`);
+            const endTime = new Date(`${formattedDate}T15:20:00+05:30`);
             const currnet_day = get_current_day_name();
             const hedging_conditions = await db[MODEL.HEDGING_TIME].findOne({
                 where: {
@@ -31,7 +32,7 @@ class StrategyController {
                     day: currnet_day,
                 },
             });
-            if (currentISTDate.isBetween(startTime, endTime)) {
+            if (currentISTDate >= startTime && currentISTDate <= endTime) {
                 const find_strategy = await db[MODEL.POSITION].findOne({
                     where: {
                         strategy_name: STRATEGY.PERCENTAGE,
@@ -98,7 +99,8 @@ class StrategyController {
                             trade.trade_type === 'SELL' &&
                             trade.ltp >= trade.stop_loss,
                     );
-                    if (tradesToClose.lenght > 0) {
+                    const PL = CE_SELL_PL + PE_SELL_PL + CE_PL + PE_PL;
+                    if (tradesToClose.length > 0) {
                         console.log('Close trades triggered.');
                         find_trade.map(async (trade) => {
                             await db[MODEL.TRADE].update(
@@ -116,8 +118,26 @@ class StrategyController {
                             { is_active: false, end_time: moment() },
                             { where: { id: find_strategy.id } },
                         );
+
+                        const current_bal = await db[MODEL.STRATEGY].findOne({
+                            where: {
+                                strategy_name: STRATEGY.PERCENTAGE,
+                            },
+                        });
+                        await db[MODEL.STRATEGY].update(
+                            {
+                                strategy_balance:
+                                    current_bal?.strategy_balance +
+                                    PL +
+                                    hedging_conditions?.required_margin * 2,
+                            },
+                            {
+                                where: {
+                                    strategy_name: STRATEGY.PERCENTAGE,
+                                },
+                            },
+                        );
                     }
-                    const PL = CE_SELL_PL + PE_SELL_PL + CE_PL + PE_PL;
                     const target = (find_strategy.required_margin * 1) / 100;
                     if (PL > target) {
                         console.log(
@@ -195,7 +215,6 @@ class StrategyController {
                                     hedging_conditions,
                                     expirey,
                                 });
-
                             if (CE_SELL && PE_SELL && CE && PE) {
                                 const create_postions = await db[
                                     MODEL.POSITION
@@ -338,21 +357,20 @@ class StrategyController {
                     }
                 }
             } else {
-                // logger.error('Market Time is closed');
+                logger.error('Market Time is closed');
             }
         } catch (error) {
-            throw new AppError(error.message, ERRORTYPES.UNKNOWN_ERROR);
+            logger.error(error.message);
         }
     }
     async percentage_without_contions_strategy() {
         try {
             // console.log('Percentage without condtoins strategy calling');
-            const istOffset = 5.5 * 60 * 60 * 1000;
-            const currentISTDate = moment().utcOffset('+05:30');
-            const formattedDate = currentISTDate.format('YYYY-MM-DD');
-            const currentTime = currentISTDate.format('HH:mm');
-            const startTime = moment('09:15', 'HH:mm');
-            const endTime = moment('15:20', 'HH:mm');
+            const currentISTDate = getCurrentISTDate();
+            const formattedDate = currentISTDate.toISOString().slice(0, 10);
+            const currentTime = getISTTime(currentISTDate);
+            const startTime = new Date(`${formattedDate}T09:15:00+05:30`);
+            const endTime = new Date(`${formattedDate}T15:20:00+05:30`);
             const currnet_day = get_current_day_name();
             const hedging_conditions = await db[MODEL.HEDGING_TIME].findOne({
                 where: {
@@ -360,7 +378,7 @@ class StrategyController {
                     day: currnet_day,
                 },
             });
-            if (currentISTDate.isBetween(startTime, endTime)) {
+            if (currentISTDate >= startTime && currentISTDate <= endTime) {
                 const find_strategy = await db[MODEL.POSITION].findOne({
                     where: {
                         strategy_name: STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
@@ -428,7 +446,8 @@ class StrategyController {
                             trade.trade_type === 'SELL' &&
                             trade.ltp >= trade.stop_loss,
                     );
-                    if (tradesToClose.lenght > 0) {
+                    const PL = CE_SELL_PL + PE_SELL_PL + CE_PL + PE_PL;
+                    if (tradesToClose.length) {
                         console.log(
                             'Close trades triggered. without contionds',
                         );
@@ -448,8 +467,28 @@ class StrategyController {
                             { is_active: false, end_time: moment() },
                             { where: { id: find_strategy.id } },
                         );
+
+                        const current_bal = await db[MODEL.STRATEGY].findOne({
+                            where: {
+                                strategy_name:
+                                    STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
+                            },
+                        });
+                        await db[MODEL.STRATEGY].update(
+                            {
+                                strategy_balance:
+                                    current_bal?.strategy_balance +
+                                    PL +
+                                    hedging_conditions?.required_margin * 2,
+                            },
+                            {
+                                where: {
+                                    strategy_name:
+                                        STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
+                                },
+                            },
+                        );
                     }
-                    const PL = CE_SELL_PL + PE_SELL_PL + CE_PL + PE_PL;
                     const target = (find_strategy.required_margin * 1) / 100;
                     if (PL > target) {
                         console.log(
@@ -520,7 +559,6 @@ class StrategyController {
                                 day: currnet_day,
                             },
                         });
-                        // if (totalStrikePrice > hedging_conditions?.market_premium) {
                         const { CE_SELL, PE_SELL, PE, CE } =
                             await findHedgingOptions({
                                 hedging_conditions,
@@ -667,18 +705,15 @@ class StrategyController {
                                 'ce pe ce_sell pe_sell not found anyone',
                             );
                         }
-                        // } else {
-                        //     logger.info('priminum price is not matching');
-                        // }
                     } else {
                         logger.info('Today is holiday');
                     }
                 }
             } else {
-                // logger.error('Market Time is closed');
+                logger.error('Market Time is closed');
             }
         } catch (error) {
-            throw new AppError(error.message, ERRORTYPES.UNKNOWN_ERROR);
+            logger.error(error.message);
         }
     }
 }

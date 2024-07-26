@@ -13,6 +13,8 @@ import {
     find_PE,
     find_PE_SELL,
     generate_premium_range,
+    getCurrentISTDate,
+    getISTTime,
     get_current_day_name,
     get_next_day_name,
     get_upcoming_expiry_date,
@@ -40,4 +42,6 @@ export {
     findHedgingOptions,
     get_next_day_name,
     strike_around_start_end,
+    getISTTime,
+    getCurrentISTDate,
 };
