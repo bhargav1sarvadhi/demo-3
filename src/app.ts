@@ -16,7 +16,7 @@ import { ErrorHandler } from './middleware';
 import WebSocket from 'ws';
 import * as UpstoxClient from 'upstox-js-sdk';
 import protobuf from 'protobufjs';
-import './utils/cron.job';
+// import './utils/cron.job';
 import { db } from './model';
 import { Server } from 'socket.io';
 import { INDEXES, USER_DETAILS } from './constant/response.types';
@@ -44,16 +44,16 @@ class AppServer {
         const app: Express = express();
         const server = http.createServer(app);
         this.initWebSocket();
-        const io = new Server(server, {
-            cors: {
-                origin: '*',
-            },
-        });
-        this.io = io;
-        this.io.on('connection', async (socket) => {
-            // socket.emit('stock_data', stocks_data);
-            socket.on('disconnect', () => {});
-        });
+        // const io = new Server(server, {
+        //     cors: {
+        //         origin: '*',
+        //     },
+        // });
+        // this.io = io;
+        // this.io.on('connection', async (socket) => {
+        //     // socket.emit('stock_data', stocks_data);
+        //     socket.on('disconnect', () => {});
+        // });
         app.use(express.urlencoded({ extended: true }));
         app.use(express.json({}));
         app.use(
@@ -205,8 +205,6 @@ cron.schedule('*/2 * * * * *', () => {
     const currentTime = getISTTime(currentISTDate);
     const startTime = new Date(`${formattedDate}T09:15:00+05:30`);
     const endTime = new Date(`${formattedDate}T15:20:00+05:30`);
-    console.log(currentISTDate, startTime, endTime);
-    console.log(currentISTDate >= startTime && currentISTDate <= endTime);
     if (currentISTDate >= startTime && currentISTDate <= endTime) {
         stocks.forEach(async (ltp, key) => {
             const update = await db[MODEL.HEDGING_OPTIONS].update(
