@@ -170,7 +170,6 @@ class AppServer {
                     ws.send(Buffer.from(JSON.stringify(data)));
                 }, 1000);
             });
-
             ws.on('close', () => {
                 console.log('disconnected');
             });
@@ -178,22 +177,8 @@ class AppServer {
             ws.on('message', async (data) => {
                 // console.log(JSON.stringify(this.decodeProfobuf(data)));
                 const stocks_data: any = this.decodeProfobuf(data);
-                if (stocks_data && stocks_data.feeds) {
-                    for (const key in stocks_data.feeds) {
-                        if (stocks_data.feeds.hasOwnProperty(key)) {
-                            const instrument_key = stocks_data.feeds[key];
-                            const ltp = instrument_key?.ltpc?.ltp;
-                            stocks.set(key, ltp);
-                        }
-                    }
-                } else {
-                    console.log('No feeds data available');
-                }
-
                 strategyController.percentage_strategy();
                 strategyController.percentage_without_contions_strategy();
-                // console.log(this.io);
-
                 const postions = async () => {
                     const postions = await db[MODEL.POSITION].findAll({
                         include: [
@@ -222,33 +207,3 @@ class AppServer {
     }
 }
 new AppServer();
-cron.schedule('*/2 * * * * *', () => {
-    const currentISTDate = moment().utcOffset('+05:30');
-    const formattedDate = currentISTDate.format('YYYY-MM-DD');
-    const currentTime = currentISTDate.format('HH:mm');
-    const startTime = moment('09:15', 'HH:mm');
-    const endTime = moment('15:20', 'HH:mm');
-    if (currentISTDate.isBetween(startTime, endTime)) {
-        stocks.forEach(async (ltp, key) => {
-            const update = await db[MODEL.HEDGING_OPTIONS].update(
-                {
-                    ltp: ltp,
-                },
-                { where: { instrument_key: key } },
-            );
-
-            const strike_update = await db[MODEL.STRIKE_MODEL].update(
-                {
-                    ltp: ltp,
-                },
-                { where: { instrument_key: key } },
-            );
-            await db[MODEL.TRADE].update(
-                { ltp: ltp },
-                { where: { instrument_key: key } },
-            );
-        });
-    } else {
-        // console.log('market close');
-    }
-});

@@ -7,6 +7,8 @@ import {
     find_CE_SELL,
     find_PE,
     find_PE_SELL,
+    getCurrentISTDate,
+    getISTTime,
     get_current_day_name,
     get_upcoming_expiry_date,
 } from '../helpers';
@@ -18,12 +20,11 @@ class StrategyController {
     async percentage_strategy() {
         try {
             // console.log('Percentage strategy calling');
-            const istOffset = 5.5 * 60 * 60 * 1000;
-            const currentISTDate = moment().utcOffset('+05:30');
-            const formattedDate = currentISTDate.format('YYYY-MM-DD');
-            const currentTime = currentISTDate.format('HH:mm');
-            const startTime = moment('09:15', 'HH:mm');
-            const endTime = moment('15:20', 'HH:mm');
+            const currentISTDate = getCurrentISTDate();
+            const formattedDate = currentISTDate.toISOString().slice(0, 10);
+            const currentTime = getISTTime(currentISTDate);
+            const startTime = new Date(`${formattedDate}T09:15:00+05:30`);
+            const endTime = new Date(`${formattedDate}T15:20:00+05:30`);
             const currnet_day = get_current_day_name();
             const hedging_conditions = await db[MODEL.HEDGING_TIME].findOne({
                 where: {
@@ -31,7 +32,7 @@ class StrategyController {
                     day: currnet_day,
                 },
             });
-            if (currentISTDate.isBetween(startTime, endTime)) {
+            if (currentISTDate >= startTime && currentISTDate <= endTime) {
                 const find_strategy = await db[MODEL.POSITION].findOne({
                     where: {
                         strategy_name: STRATEGY.PERCENTAGE,
@@ -338,7 +339,7 @@ class StrategyController {
                     }
                 }
             } else {
-                // logger.error('Market Time is closed');
+                logger.error('Market Time is closed');
             }
         } catch (error) {
             throw new AppError(error.message, ERRORTYPES.UNKNOWN_ERROR);
@@ -347,12 +348,11 @@ class StrategyController {
     async percentage_without_contions_strategy() {
         try {
             // console.log('Percentage without condtoins strategy calling');
-            const istOffset = 5.5 * 60 * 60 * 1000;
-            const currentISTDate = moment().utcOffset('+05:30');
-            const formattedDate = currentISTDate.format('YYYY-MM-DD');
-            const currentTime = currentISTDate.format('HH:mm');
-            const startTime = moment('09:15', 'HH:mm');
-            const endTime = moment('15:20', 'HH:mm');
+            const currentISTDate = getCurrentISTDate();
+            const formattedDate = currentISTDate.toISOString().slice(0, 10);
+            const currentTime = getISTTime(currentISTDate);
+            const startTime = new Date(`${formattedDate}T09:15:00+05:30`);
+            const endTime = new Date(`${formattedDate}T15:20:00+05:30`);
             const currnet_day = get_current_day_name();
             const hedging_conditions = await db[MODEL.HEDGING_TIME].findOne({
                 where: {
@@ -360,7 +360,7 @@ class StrategyController {
                     day: currnet_day,
                 },
             });
-            if (currentISTDate.isBetween(startTime, endTime)) {
+            if (currentISTDate >= startTime && currentISTDate <= endTime) {
                 const find_strategy = await db[MODEL.POSITION].findOne({
                     where: {
                         strategy_name: STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
@@ -520,7 +520,6 @@ class StrategyController {
                                 day: currnet_day,
                             },
                         });
-                        // if (totalStrikePrice > hedging_conditions?.market_premium) {
                         const { CE_SELL, PE_SELL, PE, CE } =
                             await findHedgingOptions({
                                 hedging_conditions,
@@ -667,15 +666,12 @@ class StrategyController {
                                 'ce pe ce_sell pe_sell not found anyone',
                             );
                         }
-                        // } else {
-                        //     logger.info('priminum price is not matching');
-                        // }
                     } else {
                         logger.info('Today is holiday');
                     }
                 }
             } else {
-                // logger.error('Market Time is closed');
+                logger.error('Market Time is closed');
             }
         } catch (error) {
             throw new AppError(error.message, ERRORTYPES.UNKNOWN_ERROR);
