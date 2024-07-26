@@ -5,6 +5,7 @@
     "license": "MIT",
     "scripts": {
         "start": "nodemon src/app.ts",
+        "cron": "env-cmd -f .env.cron nodemon src/app.ts",
         "format:check": "prettier --check .",
         "format:write": "prettier --write .",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
@@ -20,6 +21,7 @@
         "crypto-js": "^4.2.0",
         "csv-parser": "^3.0.0",
         "dotenv": "^16.4.5",
+        "env-cmd": "^10.1.0",
         "eslint": "^8.50.0",
         "eslint-config-prettier": "^9.0.0",
         "eslint-plugin-prettier": "^5.0.0",

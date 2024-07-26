@@ -189,30 +189,6 @@ class AppServer {
                 } else {
                     console.log('No feeds data available');
                 }
-
-                strategyController.percentage_strategy();
-                strategyController.percentage_without_contions_strategy();
-                // console.log(this.io);
-
-                const postions = async () => {
-                    const postions = await db[MODEL.POSITION].findAll({
-                        include: [
-                            {
-                                model: db[MODEL.TRADE],
-                            },
-                        ],
-                        where: {
-                            date: moment().format('YYYY-MM-DD'),
-                        },
-                        order: [['date', 'DESC']],
-                    });
-                    const totalPL = postions.reduce((sum, position) => {
-                        return sum + position.pl;
-                    }, 0);
-                    // console.log('Total PL:', totalPL);
-                    this.io.emit('stock_data', { postions, PL: totalPL });
-                };
-                postions();
             });
             ws.on('error', (error) => {
                 console.error('WebSocket error:', error);
@@ -228,6 +204,8 @@ cron.schedule('*/2 * * * * *', () => {
     const currentTime = currentISTDate.format('HH:mm');
     const startTime = moment('09:15', 'HH:mm');
     const endTime = moment('15:20', 'HH:mm');
+    console.log(currentISTDate, startTime, endTime);
+    console.log(currentISTDate.isBetween(startTime, endTime));
     if (currentISTDate.isBetween(startTime, endTime)) {
         stocks.forEach(async (ltp, key) => {
             const update = await db[MODEL.HEDGING_OPTIONS].update(
