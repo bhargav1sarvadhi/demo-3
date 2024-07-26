@@ -202,9 +202,18 @@ cron.schedule('*/2 * * * * *', () => {
     const currentISTDate = moment().utcOffset('+05:30');
     const formattedDate = currentISTDate.format('YYYY-MM-DD');
     const currentTime = currentISTDate.format('HH:mm');
-    const startTime = moment('09:15', 'HH:mm');
-    const endTime = moment('15:20', 'HH:mm');
-    console.log(currentISTDate, startTime, endTime);
+
+    // Combine date and time for startTime and endTime
+    const startTime = moment(
+        `${formattedDate} 09:15`,
+        'YYYY-MM-DD HH:mm',
+    ).utcOffset('+05:30');
+    const endTime = moment(
+        `${formattedDate} 15:20`,
+        'YYYY-MM-DD HH:mm',
+    ).utcOffset('+05:30');
+
+    console.log(currentISTDate.format(), startTime.format(), endTime.format());
     console.log(currentISTDate.isBetween(startTime, endTime));
     if (currentISTDate.isBetween(startTime, endTime)) {
         stocks.forEach(async (ltp, key) => {
@@ -225,6 +234,7 @@ cron.schedule('*/2 * * * * *', () => {
                 { ltp: ltp },
                 { where: { instrument_key: key } },
             );
+            console.log(update, strike_update);
         });
     } else {
         // console.log('market close');
