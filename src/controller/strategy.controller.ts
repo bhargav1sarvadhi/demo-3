@@ -372,10 +372,6 @@ class StrategyController {
             const startTime = new Date(`${formattedDate}T09:15:00+05:30`);
             const endTime = new Date(`${formattedDate}T15:20:00+05:30`);
             const currnet_day = get_current_day_name();
-            console.log(currentISTDate);
-            console.log(startTime);
-            console.log(endTime);
-
             const hedging_conditions = await db[MODEL.HEDGING_TIME].findOne({
                 where: {
                     index_name: INDEXES_NAMES.MIDCAP,
