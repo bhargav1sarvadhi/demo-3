@@ -77,6 +77,142 @@ class InstrumentsController {
             return next(error);
         }
     }
+    async instrument_add_kotak(req, res, next) {
+        try {
+            const csvFilePath = path.join(
+                __dirname,
+                '../',
+                './uploads/nse_fo.csv',
+            );
+            const data = [];
+            function convertTimestampToDate(timestamp) {
+                return new Date(parseInt(timestamp, 10) * 1000).toISOString();
+            }
+            await new Promise<void>((resolve, reject) => {
+                fs.createReadStream(csvFilePath)
+                    .pipe(csv())
+                    .on('data', async (raw) => {
+                        const {
+                            pSymbol,
+                            pGroup,
+                            lExpiryDate,
+                            pExchSeg,
+                            pInstType,
+                            pSymbolName,
+                            pTrdSymbol,
+                            pOptionType,
+                            pScripRefKey,
+                            pISIN,
+                            pAssetCode,
+                            pSubGroup,
+                            pCombinedSymbol,
+                            pDesc,
+                            pAmcCode,
+                            pContractId,
+                            dTickSize,
+                            lLotSize,
+                            // lExpiryDate,
+                            lMultiplier,
+                            lPrecision,
+                            dStrikePrice,
+                            pExchange,
+                            pInstName,
+                            pExpiryDate,
+                            pIssueDate,
+                            pMaturityDate,
+                            pListingDate,
+                            pNoDelStartDate,
+                            pNoDelEndDate,
+                            pBookClsStartDate,
+                            pBookClsEndDate,
+                            pRecordDate,
+                            pCreditRating,
+                            pReAdminDate,
+                            pExpulsionDate,
+                            pLocalUpdateTime,
+                            pDeliveryUnits,
+                            pPriceUnits,
+                            pLastTradingDate,
+                            pTenderPeridEndDate,
+                            pTenderPeridStartDate,
+                            pSellVarMargin,
+                            pBuyVarMargin,
+                            pInstrumentInfo,
+                            pRemarksText,
+                            pSegment,
+                            pNav,
+                            pNavDate,
+                            pMfAmt,
+                            pSipSecurity,
+                            pFaceValue,
+                            pTrdUnits,
+                            pExerciseStartDate,
+                            pExerciseEndDate,
+                            pElmMargin,
+                            pVarMargin,
+                            pTotProposedLimitValue,
+                            pScripBasePrice,
+                            pSettlementType,
+                            pCurrectionTime,
+                            iPermittedToTrade,
+                            iBoardLotQty,
+                            iMaxOrderSize,
+                            iLotSize,
+                            dOpenInterest,
+                            dHighPriceRange,
+                            dLowPriceRange,
+                            dPriceNum,
+                            dGenDen,
+                            dGenNum,
+                            dPriceQuatation,
+                            dIssuerate,
+                            dPriceDen,
+                            dWarning,
+                        } = raw;
+                        if (
+                            pInstType === 'OPTIDX' &&
+                            pSymbolName === 'MIDCPNIFTY'
+                        ) {
+                            // const datas = convertTimestampToDate(lExpiryDate);
+                            // console.log(
+                            //     pInstType,
+                            //     pSymbolName,
+                            //     raw['lExpiryDate '],
+                            // );
+                            console.log(raw);
+
+                            raw['lExpiryDate '] = convertTimestampToDate(
+                                raw['lExpiryDate '],
+                            );
+                            raw['dStrikePrice;'] =
+                                parseFloat(raw['dStrikePrice;']) / 100;
+                            data.push(raw);
+                        }
+
+                        // if (
+                        //     pExchSeg === 'NSE_EQ' ||
+                        //     pExchSeg === 'NSE_FO' ||
+                        //     pExchSeg === 'NSE_INDEX'
+                        // ) {
+                        //     await db[MODEL.INSTRUMENT].create(raw);
+                        // }
+                    })
+                    .on('end', () => {
+                        resolve();
+                    })
+                    .on('error', (error) => {
+                        reject(error);
+                    });
+            });
+            return sendResponse(res, {
+                responseType: RES_STATUS.CREATE,
+                data: data,
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
 
     async get_by_options(req, res, next) {
         try {

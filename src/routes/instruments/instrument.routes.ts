@@ -9,6 +9,10 @@ class InstrumentRoutes extends BaseRoute {
             instrumentsController.instrument_add,
         );
         this.router.get(
+            END_POINTS.INSTRUMENT_KOTAK_INSTALL,
+            instrumentsController.instrument_add_kotak,
+        );
+        this.router.get(
             END_POINTS.OPTIONS_STOCK,
             instrumentsController.get_by_options,
         );

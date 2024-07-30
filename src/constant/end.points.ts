@@ -12,6 +12,7 @@ export enum END_POINTS {
     LOGIN = '/login',
     INSTRUMENT = '/instrument',
     INSTRUMENT_INSTALL = '/install',
+    INSTRUMENT_KOTAK_INSTALL = '/kotak-install',
     OPTIONS_STOCK = '/options-stock',
     GET_STRIKE = '/get-strike',
     GET_STRIKE_TO_GENRATE_OPTIONS = '/strik-to-genrate-options',
