@@ -204,7 +204,7 @@ cron.schedule('*/2 * * * * *', () => {
     const formattedDate = currentISTDate.toISOString().slice(0, 10);
     const currentTime = getISTTime(currentISTDate);
     const startTime = new Date(`${formattedDate}T09:15:00+05:30`);
-    const endTime = new Date(`${formattedDate}T15:20:00+05:30`);
+    const endTime = new Date(`${formattedDate}T15:30:00+05:30`);
     if (currentISTDate >= startTime && currentISTDate <= endTime) {
         stocks.forEach(async (ltp, key) => {
             const update = await db[MODEL.HEDGING_OPTIONS].update(
