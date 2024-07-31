@@ -195,6 +195,7 @@ class AppServer {
                         return sum + position.pl;
                     }, 0);
                     // console.log('Total PL:', totalPL);
+
                     this.io.emit('stock_data', { postions, PL: totalPL });
                 };
                 postions();
