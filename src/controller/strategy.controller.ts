@@ -23,7 +23,7 @@ class StrategyController {
             const currentISTDate = getCurrentISTDate();
             const formattedDate = currentISTDate.toISOString().slice(0, 10);
             const currentTime = getISTTime(currentISTDate);
-            const startTime = new Date(`${formattedDate}T09:30:00+05:30`);
+            const startTime = new Date(`${formattedDate}T09:15:00+05:30`);
             const endTime = new Date(`${formattedDate}T15:20:00+05:30`);
             const currnet_day = get_current_day_name();
             const hedging_conditions = await db[MODEL.HEDGING_TIME].findOne({
@@ -369,7 +369,7 @@ class StrategyController {
             const currentISTDate = getCurrentISTDate();
             const formattedDate = currentISTDate.toISOString().slice(0, 10);
             const currentTime = getISTTime(currentISTDate);
-            const startTime = new Date(`${formattedDate}T09:30:00+05:30`);
+            const startTime = new Date(`${formattedDate}T09:15:00+05:30`);
             const endTime = new Date(`${formattedDate}T15:20:00+05:30`);
             const currnet_day = get_current_day_name();
             const hedging_conditions = await db[MODEL.HEDGING_TIME].findOne({
