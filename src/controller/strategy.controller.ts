@@ -350,14 +350,14 @@ class StrategyController {
                                 );
                             }
                         } else {
-                            logger.info('priminum price is not matching');
+                            // logger.info('priminum price is not matching');
                         }
                     } else {
                         logger.info('Today is holiday');
                     }
                 }
             } else {
-                logger.error('Market Time is closed');
+                // logger.error('Market Time is closed');
             }
         } catch (error) {
             logger.error(error.message);
@@ -710,7 +710,7 @@ class StrategyController {
                     }
                 }
             } else {
-                logger.error('Market Time is closed');
+                // logger.error('Market Time is closed');
             }
         } catch (error) {
             logger.error(error.message);
