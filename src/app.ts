@@ -31,6 +31,10 @@ let defaultClient = UpstoxClient.ApiClient.instance;
 let apiVersion = '2.0';
 let OAUTH2 = defaultClient.authentications['OAUTH2'];
 let updateBuffer = {};
+const TOKEN =
+    'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6WyJUcmFkZSJdLCJleHAiOjE3MjI3MDk4MDAsImp0aSI6ImU1M2JjODUzLWM4MjEtNGVjMC04MDIyLTA0NThhOGZhNGFjMyIsImlhdCI6MTcyMjcwMDY2NCwiaXNzIjoibG9naW4tc2VydmljZSIsInN1YiI6IjJiMjAwNmJiLTkzMmMtNDA1Yy1iZDIyLWZmOWM5YWM1MGRhNyIsInVjYyI6IlhCSDEyIiwibmFwIjoiIiwieWNlIjoiZVlcXDZcIi0kNSF3XHUwMDAxXG5cdTAwMDZkXHUwMDAwXHUwMDEwYiIsImZldGNoY2FjaGluZ3J1bGUiOjAsImNhdGVnb3Jpc2F0aW9uIjoiIn0.m1u8IeTp8K6D9QWKrWLZkhbUHLC7UYUnOYro6VvFLrgcup82EXFjGh4YXtz9c9ro-8GbIL_--jcuQC1EiG0X6KjTlKqHa4d6pB6a9R6oEF30vJC7Yr8Q-Nr1sr58BTKNTxrvxjqgB41_P9vv--TSMGiEnCVzEcP3iBDiS7rYBMW6N3Iikqi6C4-DjTza5ldilTocGqIYJc4envhqk9jHiCZctUivWYC2ntgjgVZSWhOqeU0D4e3Po3-MxPo61OZCgN_I_TZmxFgWameIWdDflQf218OtdS00mJIepfthp0d5kEBXzUXQQ3Jlvs2AYxKDUM6mIGEBdyfnDAbzEYjS1w';
+const SID = '68cd561e-c620-40ed-9174-43ada9b5bbe1';
+const handshakeServerId = 'server3';
 // OAUTH2.accessToken = process.env.OAUTH2_ACCESS_TOKEN;
 
 const port = process.env.PORT_SERVER || 8000;
@@ -42,7 +46,8 @@ class AppServer {
     constructor() {
         const app: Express = express();
         const server = http.createServer(app);
-        this.initWebSocket();
+        // this.initWebSocket();
+        this.initKotakWebSocket();
         const io = new Server(server, {
             cors: {
                 origin: '*',
@@ -88,6 +93,34 @@ class AppServer {
             await this.initProtobuf();
             const wsUrl = await this.getMarketFeedUrl();
             const ws = await this.connectWebSocket(wsUrl);
+        } catch (error) {
+            console.error('An error occurred:', error.message);
+        }
+    }
+    async initKotakWebSocket() {
+        try {
+            const url = `wss://mlhsi.kotaksecurities.com/realtime?sId=${handshakeServerId}`;
+            const ws = new WebSocket(url);
+            ws.on('open', () => {
+                console.log('Connected to WebSocket server');
+                const authMessage = JSON.stringify({
+                    type: 'cn',
+                    Authorization: TOKEN,
+                    Sid: SID,
+                    source: 'WEB',
+                });
+                ws.send(authMessage);
+            });
+            ws.on('message', (data) => {
+                const result = JSON.parse(data);
+                console.log('Message received:', result);
+            });
+            ws.on('close', () => {
+                console.log('Connection closed');
+            });
+            ws.on('error', (error) => {
+                console.error('WebSocket error:', error);
+            });
         } catch (error) {
             console.error('An error occurred:', error.message);
         }
