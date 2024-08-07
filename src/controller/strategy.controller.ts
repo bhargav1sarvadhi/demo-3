@@ -223,7 +223,7 @@ class StrategyController {
                                         'f3254597-f223-45ff-a60f-37322425895d',
                                     strategy_name: STRATEGY.PERCENTAGE,
                                     is_active: true,
-                                    qty: 2,
+                                    qty: 4,
                                     trade_id: Math.floor(
                                         100000 + Math.random() * 900000,
                                     ),
@@ -245,7 +245,7 @@ class StrategyController {
                                     stop_loss: CE_SELL.ltp * 2,
                                     is_active: true,
                                     ltp: CE_SELL.ltp,
-                                    qty: 2,
+                                    qty: 4,
                                     lot_size: CE_SELL.lot_size,
                                 });
                                 const pe_sell = await db[MODEL.TRADE].create({
@@ -261,7 +261,7 @@ class StrategyController {
                                     stop_loss: PE_SELL.ltp * 2,
                                     is_active: true,
                                     ltp: PE_SELL.ltp,
-                                    qty: 2,
+                                    qty: 4,
                                     lot_size: PE_SELL.lot_size,
                                 });
                                 const ce = await db[MODEL.TRADE].create({
@@ -277,7 +277,7 @@ class StrategyController {
                                     stop_loss: 0,
                                     is_active: true,
                                     ltp: CE.ltp,
-                                    qty: 2,
+                                    qty: 4,
                                     lot_size: CE.lot_size,
                                 });
                                 const pe = await db[MODEL.TRADE].create({
@@ -293,7 +293,7 @@ class StrategyController {
                                     stop_loss: 0,
                                     is_active: true,
                                     ltp: PE.ltp,
-                                    qty: 2,
+                                    qty: 4,
                                     lot_size: PE.lot_size,
                                 });
 
@@ -310,7 +310,7 @@ class StrategyController {
                                             strategy_balance:
                                                 current_bal?.strategy_balance -
                                                 hedging_conditions?.required_margin *
-                                                    2,
+                                                    4,
                                         },
                                         {
                                             where: {
@@ -574,7 +574,7 @@ class StrategyController {
                                 strategy_name:
                                     STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
                                 is_active: true,
-                                qty: 2,
+                                qty: 4,
                                 trade_id: Math.floor(
                                     100000 + Math.random() * 900000,
                                 ),
@@ -597,7 +597,7 @@ class StrategyController {
                                 stop_loss: CE_SELL.ltp * 2,
                                 is_active: true,
                                 ltp: CE_SELL.ltp,
-                                qty: 2,
+                                qty: 4,
                                 lot_size: CE_SELL.lot_size,
                             });
                             const pe_sell = await db[MODEL.TRADE].create({
@@ -614,7 +614,7 @@ class StrategyController {
                                 stop_loss: PE_SELL.ltp * 2,
                                 is_active: true,
                                 ltp: PE_SELL.ltp,
-                                qty: 2,
+                                qty: 4,
                                 lot_size: PE_SELL.lot_size,
                             });
                             const ce = await db[MODEL.TRADE].create({
@@ -631,7 +631,7 @@ class StrategyController {
                                 stop_loss: 0,
                                 is_active: true,
                                 ltp: CE.ltp,
-                                qty: 2,
+                                qty: 4,
                                 lot_size: CE.lot_size,
                             });
                             const pe = await db[MODEL.TRADE].create({
@@ -648,7 +648,7 @@ class StrategyController {
                                 stop_loss: 0,
                                 is_active: true,
                                 ltp: PE.ltp,
-                                qty: 2,
+                                qty: 4,
                                 lot_size: PE.lot_size,
                             });
 
@@ -666,7 +666,7 @@ class StrategyController {
                                         strategy_balance:
                                             current_bal?.strategy_balance -
                                             hedging_conditions?.required_margin *
-                                                2,
+                                                4,
                                     },
                                     {
                                         where: {
