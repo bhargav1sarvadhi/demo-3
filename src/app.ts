@@ -32,8 +32,8 @@ let apiVersion = '2.0';
 let OAUTH2 = defaultClient.authentications['OAUTH2'];
 let updateBuffer = {};
 const TOKEN =
-    'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6WyJUcmFkZSJdLCJleHAiOjE3MjI3MDk4MDAsImp0aSI6ImU1M2JjODUzLWM4MjEtNGVjMC04MDIyLTA0NThhOGZhNGFjMyIsImlhdCI6MTcyMjcwMDY2NCwiaXNzIjoibG9naW4tc2VydmljZSIsInN1YiI6IjJiMjAwNmJiLTkzMmMtNDA1Yy1iZDIyLWZmOWM5YWM1MGRhNyIsInVjYyI6IlhCSDEyIiwibmFwIjoiIiwieWNlIjoiZVlcXDZcIi0kNSF3XHUwMDAxXG5cdTAwMDZkXHUwMDAwXHUwMDEwYiIsImZldGNoY2FjaGluZ3J1bGUiOjAsImNhdGVnb3Jpc2F0aW9uIjoiIn0.m1u8IeTp8K6D9QWKrWLZkhbUHLC7UYUnOYro6VvFLrgcup82EXFjGh4YXtz9c9ro-8GbIL_--jcuQC1EiG0X6KjTlKqHa4d6pB6a9R6oEF30vJC7Yr8Q-Nr1sr58BTKNTxrvxjqgB41_P9vv--TSMGiEnCVzEcP3iBDiS7rYBMW6N3Iikqi6C4-DjTza5ldilTocGqIYJc4envhqk9jHiCZctUivWYC2ntgjgVZSWhOqeU0D4e3Po3-MxPo61OZCgN_I_TZmxFgWameIWdDflQf218OtdS00mJIepfthp0d5kEBXzUXQQ3Jlvs2AYxKDUM6mIGEBdyfnDAbzEYjS1w';
-const SID = '68cd561e-c620-40ed-9174-43ada9b5bbe1';
+    'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6WyJWaWV3Il0sImV4cCI6MTcyMjc5NjIwMCwianRpIjoiZDAwODc3NjMtYTdkMy00YTUxLWEwY2YtNDYwNjVjZGE2YjJiIiwiaWF0IjoxNzIyNzU4MzQ1LCJpc3MiOiJsb2dpbi1zZXJ2aWNlIiwic3ViIjoiMmIyMDA2YmItOTMyYy00MDVjLWJkMjItZmY5YzlhYzUwZGE3IiwidWNjIjoiWEJIMTIiLCJuYXAiOiIiLCJ5Y2UiOiJlWVxcNlwiLSQ1IXdcdTAwMDFcblx1MDAwNmRcdTAwMDBcdTAwMTBiIiwiZmV0Y2hjYWNoaW5ncnVsZSI6MCwiY2F0ZWdvcmlzYXRpb24iOiIifQ.fxyQBqxW4kZBe9PHRKtgry6OKguBew6k5HyiChL21wE91408c6UL5bG3YNaomFnrV2nPjcCRc_uigsuzpadcgmBhNmIYp59fMRg8fRzlrO4BjXu1yeUeaBEtW9yvZmBFpFJxu-IYslLnYy19wkR70Nf0hZBG4Lg0HJ59q7Hh7JrrTFQHfzxmz8OM2dpo8Y6993XO_NrPU9RRGWf0cq0WBkasFP1hNGjfbkTjJLJBZBBYMDsirdNvJqPLrlOxz67edNXebCDYBxsDoLYJByN8FusaH_EvsYP1zihHyPF680uFEGMwbuFo3sELuzVkH7nYi3vxlg3e1n-vIJuIk90cAg';
+const SID = 'b551f6df-34ab-4483-b8dc-977ac40f55ff';
 const handshakeServerId = 'server3';
 // OAUTH2.accessToken = process.env.OAUTH2_ACCESS_TOKEN;
 
@@ -103,13 +103,17 @@ class AppServer {
             const ws = new WebSocket(url);
             ws.on('open', () => {
                 console.log('Connected to WebSocket server');
-                const authMessage = JSON.stringify({
+
+                const hsijObj = {
                     type: 'cn',
-                    Authorization: TOKEN,
-                    Sid: SID,
+                    Authorization:
+                        'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6WyJUcmFkZSJdLCJleHAiOjE3MjI3OTYyMDAsImp0aSI6IjA5NjZiYTQ2LWEyYTgtNDk2Mi04ODE2LTgzODQ2Njk1MGM1OCIsImlhdCI6MTcyMjc2MjUwNywiaXNzIjoibG9naW4tc2VydmljZSIsInN1YiI6IjJiMjAwNmJiLTkzMmMtNDA1Yy1iZDIyLWZmOWM5YWM1MGRhNyIsInVjYyI6IlhCSDEyIiwibmFwIjoiIiwieWNlIjoiZVlcXDZcIi0kNSF3XHUwMDAxXG5cdTAwMDZkXHUwMDAwXHUwMDEwYiIsImZldGNoY2FjaGluZ3J1bGUiOjAsImNhdGVnb3Jpc2F0aW9uIjoiIn0.DZdOZOXc7xWWqStKGhUM_2BrJ-L0e744EHEyLob4ielxscO5j11YVUpd3X2epIW861wrrVALAnjleRQv6RwgtKQdu7Wo_bKtjTL_OhYEKYPh6aLW5CD-F8jqLTLDBDsYgmxn3zOwWNINU5XHfEv4QxHqhxSHyuckmZWlSMl1aZTOUkBahxQq4BMyHHRPye7B4-nxYT-jWxbI-LQHagM6RKR2tH-cz-dctA5R4FahV4yUAxwVbnkXk-HxX7fh5UAzUC5lSke6yZlsGKD9-ilUY8Ute4iSGfUHQxot4dH-6yfNrYIayDVOvWRlgcv3ct_g6D6TvlJpOf9lOKxBdLxRRw',
+                    Sid: '470c125b-0e4b-4a93-863e-60f138a43397',
                     source: 'WEB',
-                });
-                ws.send(authMessage);
+                };
+
+                console.log('Sending connection request:', hsijObj);
+                ws.send(JSON.stringify(hsijObj));
             });
             ws.on('message', (data) => {
                 const result = JSON.parse(data);
