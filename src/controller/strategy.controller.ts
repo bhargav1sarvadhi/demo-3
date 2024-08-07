@@ -310,7 +310,7 @@ class StrategyController {
                                             strategy_balance:
                                                 current_bal?.strategy_balance -
                                                 hedging_conditions?.required_margin *
-                                                    4,
+                                                    2,
                                         },
                                         {
                                             where: {
@@ -666,7 +666,7 @@ class StrategyController {
                                         strategy_balance:
                                             current_bal?.strategy_balance -
                                             hedging_conditions?.required_margin *
-                                                4,
+                                                2,
                                     },
                                     {
                                         where: {
