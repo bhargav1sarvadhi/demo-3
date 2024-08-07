@@ -332,7 +332,7 @@ cron.schedule(
                             strategy_balance:
                                 current_bal?.strategy_balance +
                                 PL +
-                                hedging_conditions?.required_margin * 2,
+                                hedging_conditions?.required_margin * 4,
                         },
                         {
                             where: {
@@ -454,7 +454,7 @@ cron.schedule(
                             strategy_balance:
                                 current_bal?.strategy_balance +
                                 PL +
-                                hedging_conditions?.required_margin * 2,
+                                hedging_conditions?.required_margin * 4,
                         },
                         {
                             where: {
