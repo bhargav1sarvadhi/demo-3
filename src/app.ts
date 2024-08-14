@@ -87,8 +87,8 @@ class AppServer {
         try {
             await this.initProtobuf();
             const wsUrl = await this.getMarketFeedUrl();
-            const Order_updated_urls = await this.getMarketFeedUrl();
             const ws = await this.connectWebSocket(wsUrl);
+            const Order_updated_urls = await this.getPortfolioFeedUrl();
             const ws2 = await this.connectorderUpdateWebSocket(
                 Order_updated_urls,
             );
@@ -254,8 +254,11 @@ class AppServer {
 
             ws2.on('message', function message(data) {
                 console.log('addd');
-
-                console.log('data received', data.toString());
+                console.log('data received', JSON.parse(data.toString()));
+                const update = JSON.parse(data.toString());
+                console.log(update);
+                if (update.update_type === 'order') {
+                }
             });
 
             ws2.on('error', function onError(error) {
