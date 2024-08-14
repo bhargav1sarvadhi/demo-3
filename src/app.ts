@@ -87,7 +87,11 @@ class AppServer {
         try {
             await this.initProtobuf();
             const wsUrl = await this.getMarketFeedUrl();
+            const Order_updated_urls = await this.getMarketFeedUrl();
             const ws = await this.connectWebSocket(wsUrl);
+            const ws2 = await this.connectorderUpdateWebSocket(
+                Order_updated_urls,
+            );
         } catch (error) {
             console.error('An error occurred:', error.message);
         }
@@ -109,6 +113,27 @@ class AppServer {
                     },
                 );
             }
+        });
+    }
+
+    async getPortfolioFeedUrl() {
+        return new Promise((resolve, reject) => {
+            // Initialize a Websocket API instance
+            let apiInstance = new UpstoxClient.WebsocketApi();
+
+            // Request to get the portfolio stream feed authorization
+            apiInstance.getPortfolioStreamFeedAuthorize(
+                apiVersion,
+                (error, data, response) => {
+                    if (error) {
+                        // If there's an error, log it and reject the promise
+                        reject(error);
+                    } else {
+                        // If no error, log the returned data and resolve the promise
+                        resolve(data.data.authorizedRedirectUri);
+                    }
+                },
+            );
         });
     }
 
@@ -202,6 +227,40 @@ class AppServer {
             ws.on('error', (error) => {
                 console.error('WebSocket error:', error);
                 reject(error);
+            });
+        });
+    }
+
+    async connectorderUpdateWebSocket(wsUrl) {
+        return new Promise((resolve, reject) => {
+            // Initialize a WebSocket instance with the authorized URL and appropriate headers
+            const ws2 = new WebSocket(wsUrl, {
+                headers: {
+                    'Api-Version': apiVersion,
+                    Authorization: 'Bearer ' + OAUTH2.accessToken,
+                },
+                followRedirects: true,
+            });
+
+            // Set up WebSocket event handlers
+            ws2.on('open', function open() {
+                console.log('connected order updates');
+                resolve(ws2); // Resolve the promise when the WebSocket is opened
+            });
+
+            ws2.on('close', function close() {
+                console.log('disconnected');
+            });
+
+            ws2.on('message', function message(data) {
+                console.log('addd');
+
+                console.log('data received', data.toString());
+            });
+
+            ws2.on('error', function onError(error) {
+                console.log('error:', error);
+                reject(error); // Reject the promise when there's an error
             });
         });
     }
