@@ -202,8 +202,9 @@ class AppServer {
             ws.on('message', async (data) => {
                 // console.log(JSON.stringify(this.decodeProfobuf(data)));
                 const stocks_data: any = this.decodeProfobuf(data);
-                strategyController.percentage_strategy();
-                strategyController.percentage_without_contions_strategy();
+                // strategyController.percentage_strategy();
+                // strategyController.percentage_without_contions_strategy();
+                strategyController.percentage_without_contions_strategy_with_live();
                 const postions = async () => {
                     const postions = await db[MODEL.POSITION].findAll({
                         include: [
@@ -252,12 +253,25 @@ class AppServer {
                 console.log('disconnected');
             });
 
-            ws2.on('message', function message(data) {
+            ws2.on('message', async function message(data) {
                 console.log('addd');
-                console.log('data received', JSON.parse(data.toString()));
+                // console.log('data received', JSON.parse(data.toString()));
                 const update = JSON.parse(data.toString());
-                console.log(update);
-                if (update.update_type === 'order') {
+                // console.log(update);
+                if (
+                    update.update_type === 'order' &&
+                    update.status === 'put order req received'
+                ) {
+                    // setTimeout(async () => {
+                    //     console.log(update);
+                    //     // const find_data = await db[MODEL.TRADE].findOne({
+                    //     //     where: {
+                    //     //         upstock_order_id: update.order_id,
+                    //     //     },
+                    //     // });
+                    //     console.log(find_data?.id);
+                    //     const update = await db[MODEL.TRADE].
+                    // }, 1000);
                 }
             });
 

@@ -6,6 +6,7 @@
 //     uploadVideo,
 // } from './aws.fileupload';
 import {
+    Place_order_api,
     current_strike_price,
     findHedgingOptions,
     find_CE,
@@ -18,6 +19,7 @@ import {
     get_current_day_name,
     get_next_day_name,
     get_upcoming_expiry_date,
+    marging_calculate,
     strike_around_ce_pe,
     strike_around_start_end,
 } from './stock.helper';
@@ -44,4 +46,6 @@ export {
     strike_around_start_end,
     getISTTime,
     getCurrentISTDate,
+    Place_order_api,
+    marging_calculate,
 };

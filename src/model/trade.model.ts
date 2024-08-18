@@ -18,6 +18,10 @@ export const tradeModel = (sequelize) => {
                 type: DataTypes.STRING,
                 allowNull: true,
             },
+            upstock_order_id: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            },
             strategy_name: {
                 type: DataTypes.STRING,
             },

@@ -296,3 +296,151 @@ export function getISTTime(date) {
         formatter.formatToParts(date);
     return `${hour}:${minute}`;
 }
+
+export const marging_calculate = async (data) => {
+    try {
+        const user = await db[MODEL.USER].findOne({
+            where: { email: USER_DETAILS.EMAIL },
+        });
+        const accessToken = user.token;
+        console.log(data?.CE?.instrument_key);
+
+        const body = {
+            instruments: [
+                {
+                    instrument_key: data.CE?.instrument_key,
+                    quantity: data.qty,
+                    transaction_type: 'BUY',
+                    product: 'D',
+                    price: data.CE?.ltp,
+                },
+                // {
+                //     instrument_key: data.PE?.instrument_key,
+                //     quantity: data.qty,
+                //     transaction_type: 'BUY',
+                //     product: 'D',
+                //     price: data.PE?.ltp,
+                // },
+                // {
+                //     instrument_key: data.CE_SELL?.instrument_key,
+                //     quantity: data.qty,
+                //     transaction_type: 'SELL',
+                //     product: 'D',
+                //     price: data.CE_SELL?.ltp,
+                // },
+                // {
+                //     instrument_key: data.PE_SELL?.instrument_key,
+                //     quantity: data.qty,
+                //     transaction_type: 'SELL',
+                //     product: 'D',
+                //     price: data.PE_SELL?.ltp,
+                // },
+            ],
+        };
+        console.log(body);
+
+        const config = {
+            method: 'post',
+            url: 'https://api.upstox.com/v2/charges/margin',
+            maxBodyLength: Infinity,
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+            data: {
+                instruments: [
+                    {
+                        instrument_key: data.CE?.instrument_key,
+                        quantity: data.qty,
+                        transaction_type: 'BUY',
+                        product: 'D',
+                        price: data.CE?.ltp,
+                    },
+                    // {
+                    //     instrument_key: data.PE?.instrument_key,
+                    //     quantity: data.qty,
+                    //     transaction_type: 'BUY',
+                    //     product: 'D',
+                    //     price: data.PE?.ltp,
+                    // },
+                    // {
+                    //     instrument_key: data.CE_SELL?.instrument_key,
+                    //     quantity: data.qty,
+                    //     transaction_type: 'SELL',
+                    //     product: 'D',
+                    //     price: data.CE_SELL?.ltp,
+                    // },
+                    // {
+                    //     instrument_key: data.PE_SELL?.instrument_key,
+                    //     quantity: data.qty,
+                    //     transaction_type: 'SELL',
+                    //     product: 'D',
+                    //     price: data.PE_SELL?.ltp,
+                    // },
+                ],
+            },
+        };
+        console.log(config);
+
+        const response = await axios(config);
+        console.log(response);
+        return response;
+
+        // let last_price = 0;
+        // for (const key in response.data.data) {
+        //     if (Object.prototype.hasOwnProperty.call(response.data.data, key)) {
+        //         last_price = response.data.data[key].last_price;
+        //         break;
+        //     }
+        // }
+        // return response;
+    } catch (error) {
+        console.log(error.message);
+
+        throw new AppError(error.message, ERRORTYPES.UNKNOWN_ERROR);
+    }
+};
+export const Place_order_api = async (data) => {
+    try {
+        const user = await db[MODEL.USER].findOne({
+            where: { email: USER_DETAILS.EMAIL },
+        });
+        const accessToken = user.token;
+        const config = {
+            method: 'post',
+            url: 'https://api-v2.upstox.com/order/place',
+            maxBodyLength: Infinity,
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                Accept: 'application/json',
+            },
+            data: {
+                quantity: data.qty,
+                product: 'D',
+                validity: 'DAY',
+                price: 0,
+                tag: 'string',
+                instrument_token: data?.instrument_key,
+                order_type: 'MARKET',
+                transaction_type: data?.transaction_type,
+                disclosed_quantity: 0,
+                trigger_price: 0,
+                is_amo: false,
+            },
+        };
+        const response = await axios(config);
+        return response?.data;
+
+        // let last_price = 0;
+        // for (const key in response.data.data) {
+        //     if (Object.prototype.hasOwnProperty.call(response.data.data, key)) {
+        //         last_price = response.data.data[key].last_price;
+        //         break;
+        //     }
+        // }
+        // return response;
+    } catch (error) {
+        throw new AppError(error.message, ERRORTYPES.UNKNOWN_ERROR);
+    }
+};
