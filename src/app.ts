@@ -202,8 +202,6 @@ class AppServer {
             ws.on('message', async (data) => {
                 // console.log(JSON.stringify(this.decodeProfobuf(data)));
                 const stocks_data: any = this.decodeProfobuf(data);
-                // strategyController.percentage_strategy();
-                // strategyController.percentage_without_contions_strategy();
                 strategyController.percentage_without_contions_strategy_with_live();
                 const postions = async () => {
                     const postions = await db[MODEL.POSITION].findAll({
@@ -260,18 +258,42 @@ class AppServer {
                 // console.log(update);
                 if (
                     update.update_type === 'order' &&
-                    update.status === 'put order req received'
+                    update.status === 'complete'
                 ) {
-                    // setTimeout(async () => {
-                    //     console.log(update);
-                    //     // const find_data = await db[MODEL.TRADE].findOne({
-                    //     //     where: {
-                    //     //         upstock_order_id: update.order_id,
-                    //     //     },
-                    //     // });
-                    //     console.log(find_data?.id);
-                    //     const update = await db[MODEL.TRADE].
-                    // }, 1000);
+                    setTimeout(async () => {
+                        const find_data = await db[MODEL.TRADE].findOne({
+                            where: {
+                                upstock_order_id: update.order_id,
+                            },
+                        });
+                        if (find_data) {
+                            let fillter = {};
+                            if (find_data.buy_status) {
+                                fillter = {
+                                    buy_status: false,
+                                    buy_price: update.average_price,
+                                    stop_loss: update.average_price * 2,
+                                };
+                            }
+                            if (find_data.sell_status) {
+                                fillter = {
+                                    sell_status: false,
+                                    sell_price: update.average_price,
+                                };
+                            }
+                            const update_trade_details = await db[
+                                MODEL.TRADE
+                            ].update(
+                                { ...fillter },
+                                {
+                                    where: {
+                                        id: find_data.id,
+                                    },
+                                },
+                            );
+                        }
+                        console.log(find_data?.id, update.status);
+                    }, 1000);
                 }
             });
 

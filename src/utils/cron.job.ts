@@ -10,6 +10,7 @@ import {
     get_current_day_name,
     get_next_day_name,
     get_upcoming_expiry_date,
+    Place_order_api,
     strike_around_ce_pe,
     strike_around_start_end,
 } from '../helpers';
@@ -368,11 +369,6 @@ cron.schedule(
                     day: currnet_day,
                 },
             });
-            const current_bal = await db[MODEL.STRATEGY].findOne({
-                where: {
-                    strategy_name: STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
-                },
-            });
             const find_strategy = await db[MODEL.POSITION].findOne({
                 where: {
                     strategy_name: STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
@@ -434,34 +430,48 @@ cron.schedule(
                     );
 
                     find_trade.map(async (trade) => {
-                        await db[MODEL.TRADE].update(
-                            {
-                                is_active: false,
-                                sell_price: trade.ltp,
-                            },
-                            {
-                                where: { id: trade.id },
-                            },
-                        );
+                        const ce = await Place_order_api({
+                            qty: trade.qty,
+                            instrument_key: trade?.instrument_key,
+                            transaction_type:
+                                trade.trade_type === 'BUY' ? 'SELL' : 'BUY',
+                        });
+                        if (ce) {
+                            await db[MODEL.TRADE].update(
+                                {
+                                    is_active: false,
+                                    sell_price: trade.ltp,
+                                    sell_status: true,
+                                    upstock_order_id: ce?.data?.order_id,
+                                },
+                                {
+                                    where: { id: trade.id },
+                                },
+                            );
+                        } else {
+                            const ce = await Place_order_api({
+                                qty: trade.qty,
+                                instrument_key: trade?.instrument_key,
+                                transaction_type:
+                                    trade.trade_type === 'BUY' ? 'SELL' : 'BUY',
+                            });
+                            await db[MODEL.TRADE].update(
+                                {
+                                    is_active: false,
+                                    sell_price: trade.ltp,
+                                    sell_status: true,
+                                    upstock_order_id: ce?.data?.order_id,
+                                },
+                                {
+                                    where: { id: trade.id },
+                                },
+                            );
+                        }
                     });
                     const PL = CE_SELL_PL + PE_SELL_PL + CE_PL + PE_PL;
                     await db[MODEL.POSITION].update(
                         { is_active: false, end_time: moment() },
                         { where: { id: find_strategy.id } },
-                    );
-                    await db[MODEL.STRATEGY].update(
-                        {
-                            strategy_balance:
-                                current_bal?.strategy_balance +
-                                PL +
-                                hedging_conditions?.required_margin * 4,
-                        },
-                        {
-                            where: {
-                                strategy_name:
-                                    STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
-                            },
-                        },
                     );
                 }
             } else {
