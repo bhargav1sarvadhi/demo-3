@@ -31,6 +31,10 @@ export const userModel = (sequelize) => {
                 type: DataTypes.STRING,
                 allowNull: true,
             },
+            force_end: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false,
+            },
         },
         {
             paranoid: true,

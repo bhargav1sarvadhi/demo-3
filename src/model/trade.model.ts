@@ -18,6 +18,22 @@ export const tradeModel = (sequelize) => {
                 type: DataTypes.STRING,
                 allowNull: true,
             },
+            upstock_order_id: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            },
+            upstock_buy_status: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false,
+            },
+            buy_status: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false,
+            },
+            sell_status: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false,
+            },
             strategy_name: {
                 type: DataTypes.STRING,
             },
