@@ -950,196 +950,221 @@ class StrategyController {
                             0,
                         );
                         console.log('primuem_price  ' + totalStrikePrice);
-                        if (!exclude_days.includes(currnet_day)) {
-                            const hedging_conditions = await db[
-                                MODEL.HEDGING_TIME
-                            ].findOne({
-                                where: {
-                                    index_name: INDEXES_NAMES.MIDCAP,
-                                    day: currnet_day,
-                                },
-                            });
-                            const { CE_SELL, PE_SELL, PE, CE } =
-                                await findHedgingOptions({
-                                    hedging_conditions,
-                                    expirey,
-                                });
 
-                            if (
-                                CE_SELL?.instrument_key &&
-                                PE_SELL?.instrument_key &&
-                                CE?.instrument_key &&
-                                PE?.instrument_key
-                            ) {
-                                const qty = 100;
-                                const create_postions = await db[
-                                    MODEL.POSITION
-                                ].create({
-                                    strategy_id:
-                                        '550de29a-44a8-4a2a-a356-e2132bbfdb8f',
-                                    strategy_name:
-                                        STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
-                                    is_active: true,
-                                    qty: qty,
-                                    trade_id: Math.floor(
-                                        100000 + Math.random() * 900000,
-                                    ),
-                                    date: formattedDate,
-                                    start_time: currentISTDate,
-                                    required_margin:
-                                        hedging_conditions?.required_margin * 2,
+                        if (
+                            totalStrikePrice >
+                            hedging_conditions?.market_premium
+                        ) {
+                            if (!exclude_days.includes(currnet_day)) {
+                                const hedging_conditions = await db[
+                                    MODEL.HEDGING_TIME
+                                ].findOne({
+                                    where: {
+                                        index_name: INDEXES_NAMES.MIDCAP,
+                                        day: currnet_day,
+                                    },
                                 });
+                                const { CE_SELL, PE_SELL, PE, CE } =
+                                    await findHedgingOptions({
+                                        hedging_conditions,
+                                        expirey,
+                                    });
 
-                                const ce = await Place_order_api({
-                                    qty: qty,
-                                    instrument_key: CE?.instrument_key,
-                                    transaction_type: 'BUY',
-                                });
-                                const pe = await Place_order_api({
-                                    qty: qty,
-                                    instrument_key: PE?.instrument_key,
-                                    transaction_type: 'BUY',
-                                });
-                                const ce_sell = await Place_order_api({
-                                    qty: qty,
-                                    instrument_key: CE_SELL?.instrument_key,
-                                    transaction_type: 'SELL',
-                                });
-                                const pe_sell = await Place_order_api({
-                                    qty: qty,
-                                    instrument_key: PE_SELL.instrument_key,
-                                    transaction_type: 'SELL',
-                                });
-                                if (ce && pe && ce_sell && pe_sell) {
-                                    const ce_lt = await db[MODEL.TRADE].create({
-                                        position_id: create_postions.id,
-                                        options_chain_id: CE.options_chain_id,
-                                        trade_id: create_postions?.trade_id,
-                                        upstock_order_id: ce?.data?.order_id,
-                                        strategy_name:
-                                            STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
-                                        trading_symbol: CE.trading_symbol,
-                                        instrument_key: CE.instrument_key,
-                                        instrument_type: CE.instrument_type,
-                                        trade_type: 'BUY',
-                                        buy_price: CE.ltp,
-                                        stop_loss: 0,
-                                        is_active: true,
-                                        ltp: CE.ltp,
-                                        qty: qty,
-                                        buy_status: true,
-                                        lot_size: CE.lot_size,
-                                    });
-                                    const pe_lt = await db[MODEL.TRADE].create({
-                                        position_id: create_postions.id,
-                                        options_chain_id: PE.options_chain_id,
-                                        trade_id: create_postions?.trade_id,
-                                        upstock_order_id: pe?.data?.order_id,
-                                        strategy_name:
-                                            STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
-                                        trading_symbol: PE.trading_symbol,
-                                        instrument_key: PE.instrument_key,
-                                        instrument_type: PE.instrument_type,
-                                        trade_type: 'BUY',
-                                        buy_price: PE.ltp,
-                                        stop_loss: 0,
-                                        is_active: true,
-                                        ltp: PE.ltp,
-                                        qty: qty,
-                                        buy_status: true,
-                                        lot_size: PE.lot_size,
-                                    });
-                                    const ce_sell_lt = await db[
-                                        MODEL.TRADE
+                                if (
+                                    CE_SELL?.instrument_key &&
+                                    PE_SELL?.instrument_key &&
+                                    CE?.instrument_key &&
+                                    PE?.instrument_key
+                                ) {
+                                    const qty = 100;
+                                    const create_postions = await db[
+                                        MODEL.POSITION
                                     ].create({
-                                        position_id: create_postions.id,
-                                        options_chain_id:
-                                            CE_SELL.options_chain_id,
-                                        trade_id: create_postions?.trade_id,
-                                        upstock_order_id:
-                                            ce_sell?.data?.order_id,
+                                        strategy_id:
+                                            '550de29a-44a8-4a2a-a356-e2132bbfdb8f',
                                         strategy_name:
                                             STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
-                                        trading_symbol: CE_SELL.trading_symbol,
-                                        instrument_key: CE_SELL.instrument_key,
-                                        instrument_type:
-                                            CE_SELL.instrument_type,
-                                        trade_type: 'SELL',
-                                        buy_price: CE_SELL.ltp,
-                                        stop_loss: CE_SELL.ltp * 2,
                                         is_active: true,
-                                        ltp: CE_SELL.ltp,
                                         qty: qty,
-                                        buy_status: true,
-                                        lot_size: CE_SELL.lot_size,
+                                        trade_id: Math.floor(
+                                            100000 + Math.random() * 900000,
+                                        ),
+                                        date: formattedDate,
+                                        start_time: currentISTDate,
+                                        required_margin:
+                                            hedging_conditions?.required_margin *
+                                            2,
                                     });
-                                    const pe_sell_lt = await db[
-                                        MODEL.TRADE
-                                    ].create({
-                                        position_id: create_postions.id,
-                                        options_chain_id:
-                                            PE_SELL.options_chain_id,
-                                        trade_id: create_postions?.trade_id,
-                                        upstock_order_id:
-                                            pe_sell?.data?.order_id,
-                                        strategy_name:
-                                            STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
-                                        trading_symbol: PE_SELL.trading_symbol,
+
+                                    const ce = await Place_order_api({
+                                        qty: qty,
+                                        instrument_key: CE?.instrument_key,
+                                        transaction_type: 'BUY',
+                                    });
+                                    const pe = await Place_order_api({
+                                        qty: qty,
+                                        instrument_key: PE?.instrument_key,
+                                        transaction_type: 'BUY',
+                                    });
+                                    const ce_sell = await Place_order_api({
+                                        qty: qty,
+                                        instrument_key: CE_SELL?.instrument_key,
+                                        transaction_type: 'SELL',
+                                    });
+                                    const pe_sell = await Place_order_api({
+                                        qty: qty,
                                         instrument_key: PE_SELL.instrument_key,
-                                        instrument_type:
-                                            PE_SELL.instrument_type,
-                                        trade_type: 'SELL',
-                                        buy_price: PE_SELL.ltp,
-                                        stop_loss: PE_SELL.ltp * 2,
-                                        is_active: true,
-                                        ltp: PE_SELL.ltp,
-                                        qty: qty,
-                                        buy_status: true,
-                                        lot_size: PE_SELL.lot_size,
+                                        transaction_type: 'SELL',
                                     });
+                                    if (ce && pe && ce_sell && pe_sell) {
+                                        const ce_lt = await db[
+                                            MODEL.TRADE
+                                        ].create({
+                                            position_id: create_postions.id,
+                                            options_chain_id:
+                                                CE.options_chain_id,
+                                            trade_id: create_postions?.trade_id,
+                                            upstock_order_id:
+                                                ce?.data?.order_id,
+                                            strategy_name:
+                                                STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
+                                            trading_symbol: CE.trading_symbol,
+                                            instrument_key: CE.instrument_key,
+                                            instrument_type: CE.instrument_type,
+                                            trade_type: 'BUY',
+                                            buy_price: CE.ltp,
+                                            stop_loss: 0,
+                                            is_active: true,
+                                            ltp: CE.ltp,
+                                            qty: qty,
+                                            buy_status: true,
+                                            lot_size: CE.lot_size,
+                                        });
+                                        const pe_lt = await db[
+                                            MODEL.TRADE
+                                        ].create({
+                                            position_id: create_postions.id,
+                                            options_chain_id:
+                                                PE.options_chain_id,
+                                            trade_id: create_postions?.trade_id,
+                                            upstock_order_id:
+                                                pe?.data?.order_id,
+                                            strategy_name:
+                                                STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
+                                            trading_symbol: PE.trading_symbol,
+                                            instrument_key: PE.instrument_key,
+                                            instrument_type: PE.instrument_type,
+                                            trade_type: 'BUY',
+                                            buy_price: PE.ltp,
+                                            stop_loss: 0,
+                                            is_active: true,
+                                            ltp: PE.ltp,
+                                            qty: qty,
+                                            buy_status: true,
+                                            lot_size: PE.lot_size,
+                                        });
+                                        const ce_sell_lt = await db[
+                                            MODEL.TRADE
+                                        ].create({
+                                            position_id: create_postions.id,
+                                            options_chain_id:
+                                                CE_SELL.options_chain_id,
+                                            trade_id: create_postions?.trade_id,
+                                            upstock_order_id:
+                                                ce_sell?.data?.order_id,
+                                            strategy_name:
+                                                STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
+                                            trading_symbol:
+                                                CE_SELL.trading_symbol,
+                                            instrument_key:
+                                                CE_SELL.instrument_key,
+                                            instrument_type:
+                                                CE_SELL.instrument_type,
+                                            trade_type: 'SELL',
+                                            buy_price: CE_SELL.ltp,
+                                            stop_loss: CE_SELL.ltp * 2,
+                                            is_active: true,
+                                            ltp: CE_SELL.ltp,
+                                            qty: qty,
+                                            buy_status: true,
+                                            lot_size: CE_SELL.lot_size,
+                                        });
+                                        const pe_sell_lt = await db[
+                                            MODEL.TRADE
+                                        ].create({
+                                            position_id: create_postions.id,
+                                            options_chain_id:
+                                                PE_SELL.options_chain_id,
+                                            trade_id: create_postions?.trade_id,
+                                            upstock_order_id:
+                                                pe_sell?.data?.order_id,
+                                            strategy_name:
+                                                STRATEGY.PERCENTAGE_WITHOUT_CONDITIONS,
+                                            trading_symbol:
+                                                PE_SELL.trading_symbol,
+                                            instrument_key:
+                                                PE_SELL.instrument_key,
+                                            instrument_type:
+                                                PE_SELL.instrument_type,
+                                            trade_type: 'SELL',
+                                            buy_price: PE_SELL.ltp,
+                                            stop_loss: PE_SELL.ltp * 2,
+                                            is_active: true,
+                                            ltp: PE_SELL.ltp,
+                                            qty: qty,
+                                            buy_status: true,
+                                            lot_size: PE_SELL.lot_size,
+                                        });
+                                    } else {
+                                        if (ce) {
+                                            const ce = await Place_order_api({
+                                                qty: qty,
+                                                instrument_key:
+                                                    CE?.instrument_key,
+                                                transaction_type: 'SELL',
+                                            });
+                                        }
+                                        if (pe) {
+                                            const pe = await Place_order_api({
+                                                qty: qty,
+                                                instrument_key:
+                                                    PE?.instrument_key,
+                                                transaction_type: 'SELL',
+                                            });
+                                        }
+                                        if (ce_sell) {
+                                            const ce_sell =
+                                                await Place_order_api({
+                                                    qty: qty,
+                                                    instrument_key:
+                                                        CE_SELL?.instrument_key,
+                                                    transaction_type: 'BUY',
+                                                });
+                                        }
+                                        if (pe_sell) {
+                                            const pe_sell =
+                                                await Place_order_api({
+                                                    qty: qty,
+                                                    instrument_key:
+                                                        PE_SELL?.instrument_key,
+                                                    transaction_type: 'BUY',
+                                                });
+                                        }
+                                    }
+
+                                    // console.log(ce_sell);
+
+                                    logger.error('Trade Placement failed');
                                 } else {
-                                    if (ce) {
-                                        const ce = await Place_order_api({
-                                            qty: qty,
-                                            instrument_key: CE?.instrument_key,
-                                            transaction_type: 'SELL',
-                                        });
-                                    }
-                                    if (pe) {
-                                        const pe = await Place_order_api({
-                                            qty: qty,
-                                            instrument_key: PE?.instrument_key,
-                                            transaction_type: 'SELL',
-                                        });
-                                    }
-                                    if (ce_sell) {
-                                        const ce_sell = await Place_order_api({
-                                            qty: qty,
-                                            instrument_key:
-                                                CE_SELL?.instrument_key,
-                                            transaction_type: 'BUY',
-                                        });
-                                    }
-                                    if (pe_sell) {
-                                        const pe_sell = await Place_order_api({
-                                            qty: qty,
-                                            instrument_key:
-                                                PE_SELL?.instrument_key,
-                                            transaction_type: 'BUY',
-                                        });
-                                    }
+                                    logger.info(
+                                        'ce pe ce_sell pe_sell not found anyone',
+                                    );
                                 }
-
-                                // console.log(ce_sell);
-
-                                logger.error('Trade Placement failed');
                             } else {
-                                logger.info(
-                                    'ce pe ce_sell pe_sell not found anyone',
-                                );
+                                logger.info('Today is holiday');
                             }
                         } else {
-                            logger.info('Today is holiday');
+                            // logger.error('Primeuem not match');
                         }
                     }
                 } else {
