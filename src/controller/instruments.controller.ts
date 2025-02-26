@@ -32,7 +32,7 @@ class InstrumentsController {
             const csvFilePath = path.join(
                 __dirname,
                 '../',
-                './uploads/complete.csv',
+                './uploads/NSE.csv',
             );
             const data = [];
             await new Promise<void>((resolve, reject) => {
@@ -51,15 +51,25 @@ class InstrumentsController {
                             instrument_type,
                             option_type,
                             exchange,
+                            underlying_symbol,
+                            underlying_key,
+                            underlying_type,
+                            freeze_quantity,
+                            minimum_lot,
+                            segment,
                         } = raw;
 
-                        if (
-                            exchange === 'NSE_EQ' ||
-                            exchange === 'NSE_FO' ||
-                            exchange === 'NSE_INDEX'
-                        ) {
+                        if (name === 'STATE BANK OF INDIA') {
                             await db[MODEL.INSTRUMENT].create(raw);
                         }
+
+                        // if (
+                        //     exchange === 'NSE_EQ' ||
+                        //     exchange === 'NSE_FO' ||
+                        //     exchange === 'NSE_INDEX'
+                        // ) {
+                        //     await db[MODEL.INSTRUMENT].create(raw);
+                        // }
                     })
                     .on('end', () => {
                         resolve();
@@ -665,6 +675,59 @@ class InstrumentsController {
                 message: res.__('instruments').insert,
             });
         } catch (error) {
+            return next(error);
+        }
+    }
+
+    async instuments_to_optionschain(req, res, next) {
+        try {
+            const data = [];
+            const startDate = moment().startOf('month').format('YYYY-MM-DD');
+            const endDate = moment().endOf('month').format('YYYY-MM-DD');
+            const instruments = await db[MODEL.INSTRUMENT].findAll({
+                where: {
+                    instrument_type: 'OPTSTK',
+                    expiry: {
+                        [Op.between]: [startDate, endDate],
+                    },
+                },
+            });
+
+            if (instruments.length > 0) {
+                await Promise.all(
+                    instruments.map(async (data) => {
+                        const [finded, created] = await db[
+                            MODEL.OPTIONS_CHAINS
+                        ].findOrCreate({
+                            where: {
+                                trading_symbol: data['tradingsymbol'],
+                                expiry: data['expiry'],
+                            },
+                            defaults: {
+                                name: data['name'],
+                                exchange: data['exchange'],
+                                expiry: data['expiry'],
+                                instrument_key: data['instrument_key'],
+                                exchange_token: data['exchange_token'],
+                                trading_symbol: data['tradingsymbol'],
+                                tick_size: Number(data['tick_size']),
+                                lot_size: Number(data['lot_size']),
+                                instrument_type: data['option_type'],
+                                strike_price: data['strike'],
+                                ltp: data['ltp'],
+                            },
+                        });
+                    }),
+                );
+            }
+            return sendResponse(res, {
+                responseType: RES_STATUS.GET,
+                data: data,
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            console.log(error);
+
             return next(error);
         }
     }

@@ -25,4 +25,5 @@ export enum END_POINTS {
     POSTIONS_DATA = '/postions',
     STRATEGY_LIST = '/strategy-list',
     ADD_HEDGING_OPTIONS = '/add-hedging-options',
+    INSTRUMENT_TO_OPTIONSCHAIN = '/instrument-to-options-chain',
 }

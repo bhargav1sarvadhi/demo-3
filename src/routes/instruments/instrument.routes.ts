@@ -40,6 +40,10 @@ class InstrumentRoutes extends BaseRoute {
             END_POINTS.ADD_HEDGING_OPTIONS,
             instrumentsController.get_add_hedging_options_list,
         );
+        this.router.get(
+            END_POINTS.INSTRUMENT_TO_OPTIONSCHAIN,
+            instrumentsController.instuments_to_optionschain,
+        );
     }
 }
 export const instrumentRoutes = new InstrumentRoutes().router;
