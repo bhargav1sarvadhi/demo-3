@@ -142,10 +142,13 @@ class AppServer {
                 console.log('connected');
                 resolve(ws);
                 setTimeout(async () => {
-                    const options = await db[MODEL.HEDGING_OPTIONS].findAll({
+                    const options = await db[MODEL.OPTIONS_CHAINS].findAll({
                         attributes: ['id', 'instrument_key'],
                     });
-                    const strikes = await db[MODEL.STRIKE_MODEL].findAll({
+                    const strikes = await db[MODEL.INSTRUMENT].findAll({
+                        where: {
+                            instrument_key: 'NSE_EQ|INE062A01020',
+                        },
                         attributes: ['id', 'instrument_key'],
                     });
                     const instrumentKeys_stike = strikes.map(
@@ -207,19 +210,21 @@ cron.schedule('*/2 * * * * *', () => {
     const endTime = new Date(`${formattedDate}T15:30:00+05:30`);
     if (currentISTDate >= startTime && currentISTDate <= endTime) {
         stocks.forEach(async (ltp, key) => {
-            const update = await db[MODEL.HEDGING_OPTIONS].update(
+            if (key === 'NSE_EQ|INE062A01020') {
+                const update = await db[MODEL.INSTRUMENT].update(
+                    {
+                        ltp: ltp,
+                    },
+                    { where: { instrument_key: key } },
+                );
+            }
+            const update = await db[MODEL.OPTIONS_CHAINS].update(
                 {
                     ltp: ltp,
                 },
                 { where: { instrument_key: key } },
             );
 
-            const strike_update = await db[MODEL.STRIKE_MODEL].update(
-                {
-                    ltp: ltp,
-                },
-                { where: { instrument_key: key } },
-            );
             await db[MODEL.TRADE].update(
                 { ltp: ltp },
                 { where: { instrument_key: key } },
