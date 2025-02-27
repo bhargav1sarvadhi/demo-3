@@ -213,7 +213,7 @@ cron.schedule('*/2 * * * * *', () => {
             if (key === 'NSE_EQ|INE062A01020') {
                 const update = await db[MODEL.INSTRUMENT].update(
                     {
-                        ltp: ltp,
+                        last_price: ltp,
                     },
                     { where: { instrument_key: key } },
                 );
