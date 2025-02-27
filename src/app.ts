@@ -36,6 +36,7 @@ let updateBuffer = {};
 
 const port = process.env.PORT_SERVER || 8000;
 const stocks = new Map<string, any>();
+const percentage_changes = new Map<string, any>();
 
 class AppServer {
     private io: Server;
@@ -188,6 +189,12 @@ class AppServer {
                             const instrument_key = stocks_data.feeds[key];
                             const ltp = instrument_key?.ltpc?.ltp;
                             stocks.set(key, ltp);
+                            if (key === 'NSE_EQ|INE062A01020') {
+                                const cp = instrument_key?.ltpc?.cp;
+                                const percentageChange =
+                                    ((ltp - cp) / cp) * 100;
+                                percentage_changes.set(key, percentageChange);
+                            }
                         }
                     }
                 } else {
@@ -211,9 +218,11 @@ cron.schedule('*/2 * * * * *', () => {
     if (currentISTDate >= startTime && currentISTDate <= endTime) {
         stocks.forEach(async (ltp, key) => {
             if (key === 'NSE_EQ|INE062A01020') {
+                const percentage = percentage_changes.get(key);
                 const update = await db[MODEL.INSTRUMENT].update(
                     {
                         last_price: ltp,
+                        lot_size: percentage,
                     },
                     { where: { instrument_key: key } },
                 );
