@@ -21,10 +21,10 @@ class AuthController {
     async login(req, res, next) {
         try {
             const {
-                body: {
-                    data: { email, password },
-                },
+                body: { email, password },
             } = req;
+            console.log(req.body);
+
             const result = await db[MODEL.USER].findOne({
                 where: { email },
             });
