@@ -250,6 +250,38 @@ export const findHedgingOptions = async ({ hedging_conditions, expirey }) => {
     }
     return { CE_SELL, PE_SELL, PE, CE };
 };
+const isPositive = (value) => {
+    const strValue = value.toString().trim();
+    if (strValue.startsWith('-') && !strValue.startsWith('+-')) {
+        return false;
+    }
+    return true;
+};
+
+export const find_sbin_stocks = async (ltp, percentage) => {
+    try {
+        const start_strike = Number(ltp) - 10;
+        const end_strike = Number(ltp) + 10;
+        const positive = isPositive(percentage);
+        const options_type = positive ? 'CE' : 'PE';
+        const orders =
+            options_type === 'CE'
+                ? [['strike_price', 'ASC']]
+                : [['strike_price', 'DESC']];
+        const options = await db[MODEL.OPTIONS_CHAINS].findOne({
+            where: {
+                strike_price: {
+                    [Op.between]: [start_strike, end_strike],
+                },
+                instrument_type: options_type,
+            },
+            order: orders,
+        });
+        return options;
+    } catch (error) {
+        console.log(error);
+    }
+};
 
 export function getCurrentISTDate() {
     const now = new Date();

@@ -16,7 +16,6 @@ import { ErrorHandler } from './middleware';
 import WebSocket from 'ws';
 import * as UpstoxClient from 'upstox-js-sdk';
 import protobuf from 'protobufjs';
-import './utils/cron.job';
 import { db } from './model';
 import { Server } from 'socket.io';
 import { INDEXES, USER_DETAILS } from './constant/response.types';
@@ -141,12 +140,17 @@ class AppServer {
                 console.log('connected');
                 resolve(ws);
                 setTimeout(async () => {
-                    const options = await db[MODEL.HEDGING_OPTIONS].findAll({
+                    const options = await db[MODEL.OPTIONS_CHAINS].findAll({
                         attributes: ['id', 'instrument_key'],
                     });
-                    const strikes = await db[MODEL.STRIKE_MODEL].findAll({
+
+                    const strikes = await db[MODEL.INSTRUMENT].findAll({
+                        where: {
+                            instrument_key: 'NSE_EQ|INE062A01020',
+                        },
                         attributes: ['id', 'instrument_key'],
                     });
+
                     const instrumentKeys_stike = strikes.map(
                         (option) => option.instrument_key,
                     );
@@ -177,8 +181,10 @@ class AppServer {
             ws.on('message', async (data) => {
                 // console.log(JSON.stringify(this.decodeProfobuf(data)));
                 const stocks_data: any = this.decodeProfobuf(data);
-                strategyController.percentage_strategy();
-                strategyController.percentage_without_contions_strategy();
+
+                // strategyController.percentage_strategy();
+                strategyController.sbin_timing_strategy();
+                // strategyController.percentage_without_contions_strategy();
                 const postions = async () => {
                     const postions = await db[MODEL.POSITION].findAll({
                         include: [

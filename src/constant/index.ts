@@ -4,6 +4,7 @@ import { ERRORTYPES } from './error.types';
 import {
     INDEXES,
     INDEXES_NAMES,
+    INSTRUMENT_KEYS,
     MODEL,
     RES_STATUS,
     RES_TYPES,
@@ -24,4 +25,5 @@ export {
     INDEXES_NAMES,
     USER_DETAILS,
     STRATEGY,
+    INSTRUMENT_KEYS,
 };

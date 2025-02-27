@@ -12,6 +12,7 @@ import {
     find_CE_SELL,
     find_PE,
     find_PE_SELL,
+    find_sbin_stocks,
     generate_premium_range,
     getCurrentISTDate,
     getISTTime,
@@ -44,4 +45,5 @@ export {
     strike_around_start_end,
     getISTTime,
     getCurrentISTDate,
+    find_sbin_stocks,
 };
