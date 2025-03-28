@@ -1,6 +1,7 @@
 import BaseRoute from '../base.routes';
 import { END_POINTS, ROLES } from '../../constant/index';
 import { instrumentsController } from '../../controller';
+import { paginationMiddleware } from '../../middleware';
 
 class InstrumentRoutes extends BaseRoute {
     async initializeRoutes() {
@@ -10,6 +11,7 @@ class InstrumentRoutes extends BaseRoute {
         );
         this.router.get(
             END_POINTS.OPTIONS_STOCK,
+            paginationMiddleware,
             instrumentsController.get_by_options,
         );
         this.router.get(

@@ -15,6 +15,8 @@ import util from 'util';
 import path from 'path';
 import fs from 'fs';
 import { TokenController } from '../../config/passport.jwt';
+import * as dotenv from 'dotenv';
+dotenv.config();
 const execute = util.promisify(childProcess.exec);
 
 class AuthController {
@@ -25,6 +27,8 @@ class AuthController {
                     data: { email, password },
                 },
             } = req;
+            console.log(req.body);
+
             const result = await db[MODEL.USER].findOne({
                 where: { email },
             });
@@ -93,6 +97,7 @@ class AuthController {
                 );
                 if (update === 1) {
                     console.log(update);
+                    res.redirect(process.env.UPSTOCKS_URL);
                     async function restartServer() {
                         console.log('arrived in restart');
                         const fileName = 'restart.json';

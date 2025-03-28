@@ -80,159 +80,21 @@ class InstrumentsController {
 
     async get_by_options(req, res, next) {
         try {
-            const indexes = {
-                MONDAY: [
-                    INDEXES_NAMES.BANKNIFTY,
-                    // INDEXES_NAMES.FINNITY,
-                    // INDEXES_NAMES.NIFTY_50,
-                ],
-                TUESDAY: [
-                    // INDEXES_NAMES.BANKNIFTY,
-                    INDEXES_NAMES.MIDCAP,
-                    // INDEXES_NAMES.NIFTY_50,
-                ],
-                WEDNESDAY: [
-                    // INDEXES_NAMES.FINNITY,
-                    INDEXES_NAMES.MIDCAP,
-                    // INDEXES_NAMES.NIFTY_50,
-                ],
-                THURSDAY: [
-                    // INDEXES_NAMES.BANKNIFTY,
-                    // INDEXES_NAMES.FINNITY,
-                    INDEXES_NAMES.MIDCAP,
-                ],
-                FRIDAY: [
-                    // INDEXES_NAMES.BANKNIFTY,
-                    // INDEXES_NAMES.FINNITY,
-                    INDEXES_NAMES.MIDCAP,
-                    // INDEXES_NAMES.NIFTY_50,
-                ],
-                SATURDAY: [
-                    // INDEXES_NAMES.BANKNIFTY,
-                    // INDEXES_NAMES.FINNITY,
-                    INDEXES_NAMES.MIDCAP,
-                    // INDEXES_NAMES.NIFTY_50,
-                ],
-                SUNDAY: [
-                    // INDEXES_NAMES.BANKNIFTY,
-                    // INDEXES_NAMES.FINNITY,
-                    INDEXES_NAMES.MIDCAP,
-                    // INDEXES_NAMES.NIFTY_50,
-                ],
-            };
-            const currnet_day = get_current_day_name();
-            console.log(currnet_day);
-
-            const next_day = get_next_day_name();
-            console.log(next_day);
-
-            let options = [];
-            await Promise.all(
-                indexes[next_day].map(async (indexes_names) => {
-                    const expirey_date = await get_upcoming_expiry_date(
-                        indexes_names,
-                    );
-                    const find_hedging_module = await db[
-                        MODEL.HEDGING_TIME
-                    ].findOne({
-                        where: { day: next_day, index_name: indexes_names },
-                    });
-                    console.log(
-                        find_hedging_module?.premium_start / 10,
-                        find_hedging_module?.premium_end + 5,
-                    );
-
-                    const options_datas = await db[
-                        MODEL.OPTIONS_CHAINS
-                    ].findAll({
-                        where: {
-                            expiry: expirey_date,
-                            name: indexes_names,
-                            ltp: {
-                                [Op.between]: [1, 50],
-                            },
-                        },
-                        order: [['strike_price', 'ASC']],
-                    });
-                    options = [...options, ...options_datas];
-                }),
-            );
-            // console.log(options);
-            const start = strike_around_start_end(12432, 10);
-            const expirey_date = await get_upcoming_expiry_date(
-                INDEXES_NAMES.MIDCAP,
-            );
             const find_options = await db[MODEL.OPTIONS_CHAINS].findAll({
-                where: {
-                    [Op.or]: [
-                        {
-                            strike_price: {
-                                [Op.between]: [
-                                    start.start_strike_ce,
-                                    start.end_strike_ce,
-                                ],
-                            },
-
-                            instrument_type: 'CE',
-                        },
-                        {
-                            strike_price: {
-                                [Op.between]: [
-                                    start.start_strike_pe,
-                                    start.end_strike_pe,
-                                ],
-                            },
-                            instrument_type: 'PE',
-                        },
-                    ],
-                    name: INDEXES_NAMES.MIDCAP,
-                    expiry: expirey_date,
-                },
+                order: [['strike_price', 'ASC']],
+                ...req.paginations,
+            });
+            const total_count = await db[MODEL.OPTIONS_CHAINS].count({
                 order: [['strike_price', 'ASC']],
             });
-
-            options = [...options, ...find_options];
-            const uniqueOptions = Array.from(
-                options
-                    .reduce(
-                        (map, item) => map.set(item.trading_symbol, item),
-                        new Map(),
-                    )
-                    .values(),
-            );
-            uniqueOptions.sort((a, b) => a['strike_price'] - b['strike_price']);
-
-            console.log(uniqueOptions.length, 'unique options');
-
-            // await Promise.all(
-            //     uniqueOptions.map(async (data) => {
-            //         await db[MODEL.HEDGING_OPTIONS].create({
-            //             options_chain_id: data['id'],
-            //             name: data['name'],
-            //             segment: data['segment'],
-            //             exchange: data['exchange'],
-            //             expiry: data['expiry'],
-            //             weekly: data['weekly'],
-            //             instrument_key: data['instrument_key'],
-            //             exchange_token: data['exchange_token'],
-            //             trading_symbol: data['trading_symbol'],
-            //             tick_size: data['tick_size'],
-            //             lot_size: data['lot_size'],
-            //             instrument_type: data['instrument_type'],
-            //             freeze_quantity: data['freeze_quantity'],
-            //             underlying_type: data['underlying_type'],
-            //             underlying_key: data['underlying_key'],
-            //             underlying_symbol: data['underlying_symbol'],
-            //             strike_price: data['strike_price'],
-            //             ltp: data['ltp'],
-            //             minimum_lot: data['minimum_lot'],
-            //         });
-            //     }),
-            // );
-
             return sendResponse(res, {
-                responseType: RES_STATUS.CREATE,
-                data: uniqueOptions,
+                responseType: RES_STATUS.GET,
+                data: find_options,
+                total: total_count,
+                paginations: {
+                    offset: req.paginations?.offset,
+                    limit: req.paginations?.limit,
+                },
                 message: res.__('instruments').insert,
             });
         } catch (error) {
