@@ -268,12 +268,17 @@ export const find_sbin_stocks = async (ltp, percentage) => {
             options_type === 'CE'
                 ? [['strike_price', 'ASC']]
                 : [['strike_price', 'DESC']];
+        const startDate = moment().startOf('month').format('YYYY-MM-DD');
+        const endDate = moment().endOf('month').format('YYYY-MM-DD');
         const options = await db[MODEL.OPTIONS_CHAINS].findOne({
             where: {
                 strike_price: {
                     [Op.between]: [start_strike, end_strike],
                 },
                 instrument_type: options_type,
+                expiry: {
+                    [Op.between]: [startDate, endDate],
+                },
             },
             order: orders,
         });
