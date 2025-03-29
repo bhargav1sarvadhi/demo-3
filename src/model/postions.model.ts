@@ -51,7 +51,7 @@ export const positionModel = (sequelize) => {
         },
     );
     positionModel.associate = (models) => {
-        positionModel.hasMany(models.tradeModel, {
+        positionModel.hasOne(models.tradeModel, {
             foreignKey: 'position_id',
         });
     };

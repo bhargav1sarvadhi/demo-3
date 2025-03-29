@@ -52,10 +52,14 @@ class DashboardController {
                 },
                 order: [['date', 'DESC']],
             });
+            const totalPL = postions.reduce(
+                (sum, position) => sum + position.pl,
+                0,
+            );
 
             return sendResponse(res, {
                 responseType: RES_STATUS.GET,
-                data: postions,
+                data: { postions, totalPL },
                 message: res.__('dashboard').insert,
             });
         } catch (error) {
