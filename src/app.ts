@@ -26,6 +26,7 @@ import cron from 'node-cron';
 import moment from 'moment';
 import { debounce } from 'lodash';
 import { getCurrentISTDate, getISTTime } from './helpers';
+import { Op } from 'sequelize';
 
 let protobufRoot = null;
 let defaultClient = UpstoxClient.ApiClient.instance;
@@ -143,7 +144,18 @@ class AppServer {
                 console.log('connected');
                 resolve(ws);
                 setTimeout(async () => {
+                    const startDate = moment()
+                        .startOf('month')
+                        .format('YYYY-MM-DD');
+                    const endDate = moment()
+                        .endOf('month')
+                        .format('YYYY-MM-DD');
                     const options = await db[MODEL.OPTIONS_CHAINS].findAll({
+                        where: {
+                            expiry: {
+                                [Op.between]: [startDate, endDate],
+                            },
+                        },
                         attributes: ['id', 'instrument_key'],
                     });
                     const strikes = await db[MODEL.INSTRUMENT].findAll({
