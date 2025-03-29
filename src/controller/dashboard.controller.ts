@@ -21,6 +21,8 @@ class DashboardController {
                     data: { start_date, end_date, strategy_name },
                 },
             } = req;
+            console.log(start_date, end_date);
+
             let apply_filter: { [key: string]: any } = {};
             const startOfMonth = moment().startOf('month').format('YYYY-MM-DD');
             const endOfMonth = moment().endOf('month').format('YYYY-MM-DD');
@@ -52,10 +54,14 @@ class DashboardController {
                 },
                 order: [['date', 'DESC']],
             });
+            const totalPL = postions.reduce(
+                (sum, position) => sum + position.pl,
+                0,
+            );
 
             return sendResponse(res, {
                 responseType: RES_STATUS.GET,
-                data: postions,
+                data: { postions, total_pl: totalPL },
                 message: res.__('dashboard').insert,
             });
         } catch (error) {
