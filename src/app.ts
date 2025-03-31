@@ -47,7 +47,10 @@ class AppServer {
             cors: {
                 origin: '*',
             },
+            path: '/api/socket',
         });
+        console.log(io);
+
         this.io = io;
         this.io.on('connection', async (socket) => {
             // socket.emit('stock_data', stocks_data);
