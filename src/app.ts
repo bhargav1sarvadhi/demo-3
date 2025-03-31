@@ -157,6 +157,7 @@ class AppServer {
                             expiry: {
                                 [Op.between]: [startDate, endDate],
                             },
+                            is_active: true,
                         },
                     });
 
@@ -197,7 +198,6 @@ class AppServer {
             ws.on('message', async (data) => {
                 // console.log(JSON.stringify(this.decodeProfobuf(data)));
                 const stocks_data: any = this.decodeProfobuf(data);
-                console.log(stocks_data);
 
                 // strategyController.percentage_strategy();
                 strategyController.sbin_timing_strategy();
