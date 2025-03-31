@@ -13,6 +13,7 @@ export enum END_POINTS {
     INSTRUMENT = '/instrument',
     INSTRUMENT_INSTALL = '/install',
     OPTIONS_STOCK = '/options-stock',
+    OPTIONS_STOCK_ACTIVE = '/options-stock-active/:id',
     GET_STRIKE = '/get-strike',
     GET_STRIKE_TO_GENRATE_OPTIONS = '/strik-to-genrate-options',
     GENRATE_STRIKE = '/create-strike',

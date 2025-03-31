@@ -51,6 +51,10 @@ class AppServer {
         this.io = io;
         this.io.on('connection', async (socket) => {
             // socket.emit('stock_data', stocks_data);
+            socket.on('sendemit', (data) => {
+                console.log(data);
+                this.io.emit('stock_data', data);
+            });
             socket.on('disconnect', () => {});
         });
         app.use(express.urlencoded({ extended: true }));
@@ -193,6 +197,7 @@ class AppServer {
             ws.on('message', async (data) => {
                 // console.log(JSON.stringify(this.decodeProfobuf(data)));
                 const stocks_data: any = this.decodeProfobuf(data);
+                console.log(stocks_data);
 
                 // strategyController.percentage_strategy();
                 strategyController.sbin_timing_strategy();
@@ -213,7 +218,7 @@ class AppServer {
                         return sum + position.pl;
                     }, 0);
                     // console.log('Total PL:', totalPL);
-                    this.io.emit('stock_data', { postions, PL: totalPL });
+                    this.io.emit('stock_data', { postions, totalPL: totalPL });
                 };
                 postions();
             });

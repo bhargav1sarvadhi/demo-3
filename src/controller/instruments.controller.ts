@@ -91,11 +91,19 @@ class InstrumentsController {
     async get_by_options(req, res, next) {
         try {
             const find_options = await db[MODEL.OPTIONS_CHAINS].findAll({
-                order: [['strike_price', 'ASC']],
+                where: {
+                    is_active: true,
+                },
+                order: [
+                    ['expiry', 'DESC'],
+                    ['strike_price', 'ASC'],
+                ],
                 ...req.paginations,
             });
             const total_count = await db[MODEL.OPTIONS_CHAINS].count({
-                order: [['strike_price', 'ASC']],
+                where: {
+                    is_active: true,
+                },
             });
             return sendResponse(res, {
                 responseType: RES_STATUS.GET,
@@ -105,6 +113,32 @@ class InstrumentsController {
                     offset: req.paginations?.offset,
                     limit: req.paginations?.limit,
                 },
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+
+    async stocks_active_deactive(req, res, next) {
+        try {
+            const {
+                params: { id },
+            } = req;
+            const find_stcoks = await db[MODEL.OPTIONS_CHAINS].findOne({
+                where: { id },
+            });
+            const active = find_stcoks?.is_active ? false : true;
+            await db[MODEL.OPTIONS_CHAINS].update(
+                { is_active: active },
+                {
+                    where: {
+                        id: id,
+                    },
+                },
+            );
+            return sendResponse(res, {
+                responseType: RES_STATUS.UPDATE,
                 message: res.__('instruments').insert,
             });
         } catch (error) {

@@ -12,6 +12,10 @@ class InstrumentRoutes extends BaseRoute {
             END_POINTS.OPTIONS_STOCK,
             instrumentsController.get_by_options,
         );
+        this.router.put(
+            END_POINTS.OPTIONS_STOCK_ACTIVE,
+            instrumentsController.stocks_active_deactive,
+        );
         this.router.get(
             END_POINTS.GET_STRIKE,
             instrumentsController.get_index_strike,

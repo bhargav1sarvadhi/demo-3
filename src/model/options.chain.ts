@@ -83,6 +83,10 @@ export const OptionchainModel = (sequelize) => {
                 type: DataTypes.INTEGER,
                 allowNull: true,
             },
+            is_active: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: true,
+            },
         },
         {
             paranoid: true,
