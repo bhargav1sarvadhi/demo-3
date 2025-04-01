@@ -213,7 +213,10 @@ class AppServer {
                         where: {
                             date: moment().format('YYYY-MM-DD'),
                         },
-                        order: [['date', 'DESC']],
+                        order: [
+                            ['start_time', 'ASC'],
+                            ['date', 'DESC'],
+                        ],
                     });
                     const totalPL = postions.reduce((sum, position) => {
                         return sum + position.pl;
