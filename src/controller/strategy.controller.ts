@@ -819,7 +819,10 @@ class StrategyController {
                     const currnet_day = get_current_day_name();
                     const exclude_days = ['SUNDAY', 'SATURDAY'];
                     if (!exclude_days.includes(currnet_day)) {
-                        if (currentISTDate >= trade_startTime) {
+                        if (
+                            currentISTDate >= trade_startTime &&
+                            currentISTDate <= trade_endTime
+                        ) {
                             const get_current_stock_price = await db[
                                 MODEL.INSTRUMENT
                             ].findOne({
