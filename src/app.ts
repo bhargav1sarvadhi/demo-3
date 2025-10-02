@@ -25,10 +25,12 @@ import cron from 'node-cron';
 import moment from 'moment';
 import { debounce } from 'lodash';
 import { Op } from 'sequelize';
+import axios from 'axios';
+import './utils/cron.job';
 
 let protobufRoot = null;
 let defaultClient = UpstoxClient.ApiClient.instance;
-let apiVersion = '2.0';
+let apiVersion = '3.0';
 let OAUTH2 = defaultClient.authentications['OAUTH2'];
 let updateBuffer = {};
 // OAUTH2.accessToken = process.env.OAUTH2_ACCESS_TOKEN;
@@ -99,26 +101,36 @@ class AppServer {
     }
 
     async getMarketFeedUrl() {
-        return new Promise<string>(async (resolve, reject) => {
+        try {
             const user = await db[MODEL.USER].findOne({
                 where: { email: USER_DETAILS.EMAIL },
             });
-            OAUTH2.accessToken = user.token;
-            if (OAUTH2.accessToken !== '') {
-                let apiInstance = new UpstoxClient.WebsocketApi();
-                apiInstance.getMarketDataFeedAuthorize(
-                    apiVersion,
-                    (error, data, response) => {
-                        if (error) reject(error);
-                        else resolve(data.data.authorizedRedirectUri);
-                    },
-                );
+
+            if (!user || !user.token) {
+                throw new Error('User token not found');
             }
-        });
+
+            const url =
+                'https://api.upstox.com/v3/feed/market-data-feed/authorize';
+
+            const response = await axios.get(url, {
+                headers: {
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${user.token}`,
+                },
+            });
+
+            return response.data.data.authorizedRedirectUri;
+        } catch (error) {
+            console.error('Error in getMarketFeedUrl:', error.message || error);
+            throw error;
+        }
     }
 
     initProtobuf = async () => {
-        protobufRoot = await protobuf.load(__dirname + '/MarketDataFeed.proto');
+        protobufRoot = await protobuf.load(
+            __dirname + '/MarketDataFeedV3.proto',
+        );
         console.log('Protobuf part initialization complete');
     };
     decodeProfobuf = (buffer) => {
@@ -128,7 +140,7 @@ class AppServer {
         }
 
         const FeedResponse = protobufRoot.lookupType(
-            'com.upstox.marketdatafeeder.rpc.proto.FeedResponse',
+            'com.upstox.marketdatafeederv3udapi.rpc.proto.FeedResponse',
         );
         return FeedResponse.decode(buffer);
     };
@@ -141,7 +153,6 @@ class AppServer {
                 },
                 followRedirects: true,
             });
-
             ws.on('open', () => {
                 console.log('connected');
                 resolve(ws);
@@ -175,17 +186,14 @@ class AppServer {
                     const instrumentKeys = options.map(
                         (option) => option.instrument_key,
                     );
-                    const instrument_data_keys = [
-                        ...instrumentKeys_stike,
-                        ...instrumentKeys,
-                    ];
+                    const instrument_data_keys = ['NSE_FO | 38429'];
                     console.log(instrument_data_keys.length);
                     const data = {
                         typr: '',
                         guid: 'someguid',
                         method: 'sub',
                         data: {
-                            mode: 'ltpc',
+                            mode: 'full',
                             instrumentKeys: instrument_data_keys,
                         },
                     };
@@ -197,34 +205,35 @@ class AppServer {
             });
 
             ws.on('message', async (data) => {
-                // console.log(JSON.stringify(this.decodeProfobuf(data)));
+                // console.log(JSON.stringify(data));
                 const stocks_data: any = this.decodeProfobuf(data);
+                console.log(stocks_data);
 
                 // strategyController.percentage_strategy();
-                strategyController.sbin_timing_strategy();
+                // strategyController.sbin_timing_strategy();
                 // strategyController.percentage_without_contions_strategy();
-                const postions = async () => {
-                    const postions = await db[MODEL.POSITION].findAll({
-                        include: [
-                            {
-                                model: db[MODEL.TRADE],
-                            },
-                        ],
-                        where: {
-                            date: moment().format('YYYY-MM-DD'),
-                        },
-                        order: [
-                            ['start_time', 'ASC'],
-                            ['date', 'DESC'],
-                        ],
-                    });
-                    const totalPL = postions.reduce((sum, position) => {
-                        return sum + position.pl;
-                    }, 0);
-                    // console.log('Total PL:', totalPL);
-                    this.io.emit('stock_data', { postions, totalPL: totalPL });
-                };
-                postions();
+                // const postions = async () => {
+                //     const postions = await db[MODEL.POSITION].findAll({
+                //         include: [
+                //             {
+                //                 model: db[MODEL.TRADE],
+                //             },
+                //         ],
+                //         where: {
+                //             date: moment().format('YYYY-MM-DD'),
+                //         },
+                //         order: [
+                //             ['start_time', 'ASC'],
+                //             ['date', 'DESC'],
+                //         ],
+                //     });
+                //     const totalPL = postions.reduce((sum, position) => {
+                //         return sum + position.pl;
+                //     }, 0);
+                //     // console.log('Total PL:', totalPL);
+                //     this.io.emit('stock_data', { postions, totalPL: totalPL });
+                // };
+                // postions();
             });
             ws.on('error', (error) => {
                 console.error('WebSocket error:', error);

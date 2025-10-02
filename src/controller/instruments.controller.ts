@@ -212,6 +212,7 @@ class InstrumentsController {
                     INDEXES_NAMES.BANKNIFTY,
                     INDEXES_NAMES.FINNITY,
                     INDEXES_NAMES.NIFTY_50,
+                    INDEXES_NAMES.MIDCAP,
                 ],
                 TUESDAY: [
                     INDEXES_NAMES.BANKNIFTY,
@@ -248,7 +249,7 @@ class InstrumentsController {
                 ],
             };
             // const currnet_day = get_current_day_name();
-            const currnet_day = 'TUESDAY';
+            const currnet_day = 'MONDAY';
             let options = [];
             console.log(indexes[currnet_day]);
             await Promise.all(
