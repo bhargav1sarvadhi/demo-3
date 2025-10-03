@@ -186,7 +186,7 @@ class AppServer {
                     const instrumentKeys = options.map(
                         (option) => option.instrument_key,
                     );
-                    const instrument_data_keys = ['NSE_FO | 38429'];
+                    const instrument_data_keys = ['NSE_FO|57735'];
                     console.log(instrument_data_keys.length);
                     const data = {
                         typr: '',
@@ -207,8 +207,65 @@ class AppServer {
             ws.on('message', async (data) => {
                 // console.log(JSON.stringify(data));
                 const stocks_data: any = this.decodeProfobuf(data);
-                console.log(stocks_data);
 
+                // console.log(stocks_data);
+                if (stocks_data && stocks_data.feeds) {
+                    for (const key in stocks_data.feeds) {
+                        if (stocks_data.feeds.hasOwnProperty(key)) {
+                            const feedData =
+                                stocks_data.feeds[key]?.fullFeed?.marketFF;
+                            if (feedData?.marketOHLC?.ohlc?.length) {
+                                const i1Candle = feedData.marketOHLC.ohlc.find(
+                                    (c) => c.interval === 'I1',
+                                );
+                                if (i1Candle) {
+                                    // console.log('1-min Candle:', i1Candle);
+                                    const timestamp = i1Candle.ts.toNumber();
+                                    const volume = i1Candle.vol.toNumber();
+                                    const candleDate = new Date(timestamp);
+                                    const candleDateIST =
+                                        candleDate.toLocaleString('en-IN', {
+                                            timeZone: 'Asia/Kolkata',
+                                        });
+                                    const [find, created] = await db[
+                                        MODEL.CANDELS
+                                    ].findOrCreate({
+                                        where: {
+                                            ts: timestamp.toString(),
+                                            instrument_key: key,
+                                        },
+                                        defaults: {
+                                            ts: timestamp.toString(),
+                                            open: i1Candle.open,
+                                            high: i1Candle.high,
+                                            low: i1Candle.low,
+                                            close: i1Candle.close,
+                                            volume: volume,
+                                            instrument_key: key,
+                                            interval: i1Candle.interval,
+                                        },
+                                    });
+                                    if (find) {
+                                        const updated = await db[
+                                            MODEL.CANDELS
+                                        ].update(
+                                            {
+                                                open: i1Candle.open,
+                                                high: i1Candle.high,
+                                                low: i1Candle.low,
+                                                close: i1Candle.close,
+                                                volume: volume,
+                                            },
+                                            { where: { id: find.id } },
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    console.log('No feeds data available');
+                }
                 // strategyController.percentage_strategy();
                 // strategyController.sbin_timing_strategy();
                 // strategyController.percentage_without_contions_strategy();

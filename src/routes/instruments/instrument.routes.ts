@@ -1,6 +1,6 @@
 import BaseRoute from '../base.routes';
 import { END_POINTS, ROLES } from '../../constant/index';
-import { instrumentsController } from '../../controller';
+import { instrumentsController, strategyController } from '../../controller';
 
 class InstrumentRoutes extends BaseRoute {
     async initializeRoutes() {
@@ -47,6 +47,10 @@ class InstrumentRoutes extends BaseRoute {
         this.router.get(
             END_POINTS.INSTRUMENT_TO_OPTIONSCHAIN,
             instrumentsController.instuments_to_optionschain,
+        );
+        this.router.get(
+            END_POINTS.CHECK_SCALLPING,
+            instrumentsController.check_scalping,
         );
     }
 }

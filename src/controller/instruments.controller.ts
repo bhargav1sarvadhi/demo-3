@@ -24,6 +24,7 @@ import {
     strike_around_start_end,
 } from '../helpers';
 import { options } from 'joi';
+import { strategyController } from './strategy.controller';
 const csv = require('csv-parser');
 
 class InstrumentsController {
@@ -204,6 +205,7 @@ class InstrumentsController {
         }
     }
 
+    /*************  ✨ Windsurf Command 🌟  *************/
     async strike_to_genrate_options(req, res, next) {
         try {
             const accessToken = process.env.OAUTH2_ACCESS_TOKEN;
@@ -251,17 +253,32 @@ class InstrumentsController {
             // const currnet_day = get_current_day_name();
             const currnet_day = 'MONDAY';
             let options = [];
+            console.log('Current day is', currnet_day);
+            console.log('Indexes for current day are', indexes[currnet_day]);
             console.log(indexes[currnet_day]);
             await Promise.all(
                 indexes[currnet_day].map(async (indexes_names) => {
+                    console.log('Getting expiry date for', indexes_names);
                     const expirey_date = await get_upcoming_expiry_date(
                         indexes_names,
+                    );
+                    console.log(
+                        'Expiry date for',
+                        indexes_names,
+                        'is',
+                        expirey_date,
                     );
                     const find_hedging_module = await db[
                         MODEL.HEDGING_TIME
                     ].findOne({
                         where: { day: currnet_day, index_name: indexes_names },
                     });
+                    console.log(
+                        'Hedging module for',
+                        indexes_names,
+                        'is',
+                        find_hedging_module,
+                    );
                     const options_datas = await db[
                         MODEL.OPTIONS_CHAINS
                     ].findAll({
@@ -282,6 +299,10 @@ class InstrumentsController {
                                                 10,
                                             find_hedging_module?.premium_end /
                                                 10,
+                                            find_hedging_module?.premium_start /
+                                                10,
+                                            find_hedging_module?.premium_end /
+                                                10,
                                         ],
                                     },
                                 ],
@@ -289,11 +310,18 @@ class InstrumentsController {
                         },
                         order: [['strike_price', 'ASC']],
                     });
+                    console.log(
+                        'Options data for',
+                        indexes_names,
+                        'are',
+                        options_datas,
+                    );
                     options = [...options, ...options_datas];
                 }),
             );
             await Promise.all(
                 options.map(async (data) => {
+                    console.log('Creating hedging options for', data.name);
                     await db[MODEL.HEDGING_OPTIONS].create({
                         options_chain_id: data.id,
                         name: data.name,
@@ -323,9 +351,11 @@ class InstrumentsController {
                 message: res.__('instruments').insert,
             });
         } catch (error) {
+            console.log('Error in strike_to_genrate_options', error);
             return next(error);
         }
     }
+    /*******  9faca84e-aad7-4082-a50c-878cb797dd23  *******/
 
     async insert_hedging_strategy(req, res, next) {
         try {
@@ -625,6 +655,27 @@ class InstrumentsController {
         } catch (error) {
             console.log(error);
 
+            return next(error);
+        }
+    }
+
+    async check_scalping(req, res, next) {
+        try {
+            const data = await strategyController.scallping_strategy();
+            // for (let i of data) {
+            //     // const timestamp = i.ts.toNumber();
+            //     const candleDate = new Date(Number(i.ts));
+            //     const candleDateIST = candleDate.toLocaleString('en-IN', {
+            //         timeZone: 'Asia/Kolkata',
+            //     });
+            //     console.log(candleDateIST);
+            // }
+            return sendResponse(res, {
+                responseType: RES_STATUS.GET,
+                data: data,
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
             return next(error);
         }
     }
