@@ -159,17 +159,6 @@ class AppServer {
                 resolve(ws);
                 setTimeout(async () => {
                     const options = await db[MODEL.STRIKE_MODEL].findAll({});
-
-                    // const strikes = await db[MODEL.INSTRUMENT].findAll({
-                    //     where: {
-                    //         instrument_key: 'NSE_EQ|INE062A01020',
-                    //     },
-                    //     attributes: ['id', 'instrument_key'],
-                    // });
-
-                    // const instrumentKeys_stike = strikes.map(
-                    //     (option) => option.instrument_key,
-                    // );
                     const instrumentKeys = options.map(
                         (option) => option.instrument_key,
                     );
@@ -314,12 +303,13 @@ cron.schedule('*/2 * * * * *', () => {
                 },
                 { where: { instrument_key: key } },
             );
+
             await db[MODEL.TRADE].update(
                 { ltp: ltp },
                 { where: { instrument_key: key } },
             );
         });
     } else {
-        // console.log('market close');
+        console.log('market close');
     }
 });
