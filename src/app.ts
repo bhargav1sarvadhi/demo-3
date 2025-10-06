@@ -27,6 +27,7 @@ import { debounce } from 'lodash';
 import { Op } from 'sequelize';
 import axios from 'axios';
 import './utils/cron.job';
+import { getCurrentISTDate, getISTTime } from './helpers';
 
 let protobufRoot = null;
 let defaultClient = UpstoxClient.ApiClient.instance;
@@ -204,14 +205,7 @@ class AppServer {
                             // console.log(feedData.ltpc.ltp);
 
                             if (feedData.ltpc.ltp) {
-                                await db[MODEL.STRIKE_MODEL].update(
-                                    { ltp: feedData?.ltpc?.ltp },
-                                    {
-                                        where: {
-                                            instrument_key: key,
-                                        },
-                                    },
-                                );
+                                stocks.set(key, feedData.ltpc.ltp);
                             }
                             if (feedData?.marketOHLC?.ohlc?.length) {
                                 const i1Candle = feedData.marketOHLC.ohlc.find(
@@ -299,3 +293,33 @@ class AppServer {
     }
 }
 new AppServer();
+cron.schedule('*/2 * * * * *', () => {
+    const currentISTDate = getCurrentISTDate();
+    const formattedDate = currentISTDate.toISOString().slice(0, 10);
+    const currentTime = getISTTime(currentISTDate);
+    const startTime = new Date(`${formattedDate}T09:15:00+05:30`);
+    const endTime = new Date(`${formattedDate}T15:30:00+05:30`);
+    if (currentISTDate >= startTime && currentISTDate <= endTime) {
+        stocks.forEach(async (ltp, key) => {
+            const update = await db[MODEL.HEDGING_OPTIONS].update(
+                {
+                    ltp: ltp,
+                },
+                { where: { instrument_key: key } },
+            );
+
+            const strike_update = await db[MODEL.STRIKE_MODEL].update(
+                {
+                    ltp: ltp,
+                },
+                { where: { instrument_key: key } },
+            );
+            await db[MODEL.TRADE].update(
+                { ltp: ltp },
+                { where: { instrument_key: key } },
+            );
+        });
+    } else {
+        // console.log('market close');
+    }
+});
