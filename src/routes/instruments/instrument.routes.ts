@@ -9,6 +9,10 @@ class InstrumentRoutes extends BaseRoute {
             instrumentsController.instrument_add,
         );
         this.router.get(
+            END_POINTS.INSTRUMENT_INSTALL_JSON,
+            instrumentsController.instrument_add_JSON,
+        );
+        this.router.get(
             END_POINTS.OPTIONS_STOCK,
             instrumentsController.get_by_options,
         );
@@ -24,7 +28,7 @@ class InstrumentRoutes extends BaseRoute {
             END_POINTS.GET_STRIKE_TO_GENRATE_OPTIONS,
             instrumentsController.strike_to_genrate_options,
         );
-        this.router.get(
+        this.router.post(
             END_POINTS.GENRATE_STRIKE,
             instrumentsController.strike_genrate,
         );

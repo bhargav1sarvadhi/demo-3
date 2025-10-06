@@ -1070,7 +1070,7 @@ class StrategyController {
                     instrument_key: 'NSE_FO|57735',
                 },
                 order: [['ts', 'DESC']],
-                limit: 50,
+                limit: 100,
             });
 
             if (find_candels.length < 22) {

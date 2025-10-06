@@ -157,36 +157,22 @@ class AppServer {
                 console.log('connected');
                 resolve(ws);
                 setTimeout(async () => {
-                    const startDate = moment()
-                        .startOf('month')
-                        .format('YYYY-MM-DD');
-                    const endDate = moment()
-                        .endOf('month')
-                        .format('YYYY-MM-DD');
-                    const options = await db[MODEL.OPTIONS_CHAINS].findAll({
-                        attributes: ['id', 'instrument_key'],
-                        where: {
-                            expiry: {
-                                [Op.between]: [startDate, endDate],
-                            },
-                            is_active: true,
-                        },
-                    });
+                    const options = await db[MODEL.STRIKE_MODEL].findAll({});
 
-                    const strikes = await db[MODEL.INSTRUMENT].findAll({
-                        where: {
-                            instrument_key: 'NSE_EQ|INE062A01020',
-                        },
-                        attributes: ['id', 'instrument_key'],
-                    });
+                    // const strikes = await db[MODEL.INSTRUMENT].findAll({
+                    //     where: {
+                    //         instrument_key: 'NSE_EQ|INE062A01020',
+                    //     },
+                    //     attributes: ['id', 'instrument_key'],
+                    // });
 
-                    const instrumentKeys_stike = strikes.map(
-                        (option) => option.instrument_key,
-                    );
+                    // const instrumentKeys_stike = strikes.map(
+                    //     (option) => option.instrument_key,
+                    // );
                     const instrumentKeys = options.map(
                         (option) => option.instrument_key,
                     );
-                    const instrument_data_keys = ['NSE_FO|57735'];
+                    const instrument_data_keys = [...instrumentKeys];
                     console.log(instrument_data_keys.length);
                     const data = {
                         typr: '',
@@ -214,6 +200,19 @@ class AppServer {
                         if (stocks_data.feeds.hasOwnProperty(key)) {
                             const feedData =
                                 stocks_data.feeds[key]?.fullFeed?.marketFF;
+
+                            // console.log(feedData.ltpc.ltp);
+
+                            if (feedData.ltpc.ltp) {
+                                await db[MODEL.STRIKE_MODEL].update(
+                                    { ltp: feedData?.ltpc?.ltp },
+                                    {
+                                        where: {
+                                            instrument_key: key,
+                                        },
+                                    },
+                                );
+                            }
                             if (feedData?.marketOHLC?.ohlc?.length) {
                                 const i1Candle = feedData.marketOHLC.ohlc.find(
                                     (c) => c.interval === 'I1',

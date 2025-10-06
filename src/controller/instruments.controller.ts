@@ -8,6 +8,7 @@ import {
     MODEL,
     RES_STATUS,
     RES_TYPES,
+    USER_DETAILS,
 } from '../constant';
 import { sendResponse } from '../utils';
 import path from 'path';
@@ -88,6 +89,53 @@ class InstrumentsController {
             return next(error);
         }
     }
+    async instrument_add_JSON(req, res, next) {
+        try {
+            const files = ['../../src/uploads/complete.json'];
+
+            for (const file of files) {
+                const jsonData: any = fs.readFileSync(
+                    path.join(__dirname, file),
+                );
+                const data: any = JSON.parse(jsonData);
+                const insertdata = [];
+                data.map(async (raw) => {
+                    const {
+                        instrument_key,
+                        exchange_token,
+                        tradingsymbol,
+                        name,
+                        last_price,
+                        expiry,
+                        tick_size,
+                        lot_size,
+                        instrument_type,
+                        option_type,
+                        exchange,
+                        underlying_symbol,
+                        underlying_key,
+                        underlying_type,
+                        freeze_quantity,
+                        minimum_lot,
+                        segment,
+                    } = raw;
+
+                    if (instrument_key == 'NSE_INDEX|Nifty Bank') {
+                        console.log(name);
+                        const rawinsert = await db[MODEL.INSTRUMENT].create(
+                            raw,
+                        );
+                        console.log(rawinsert);
+                    }
+                });
+            }
+
+            return Promise.resolve();
+        } catch (error) {
+            console.error('Error seeding data:', error);
+            throw error;
+        }
+    }
 
     async get_by_options(req, res, next) {
         try {
@@ -160,25 +208,28 @@ class InstrumentsController {
     async get_index_strike(req, res, next) {
         try {
             const INDEXES = [
-                'NSE_INDEX|NIFTY MID SELECT',
-                'NSE_INDEX|Nifty 50',
+                // 'NSE_INDEX|NIFTY MID SELECT',
+                // 'NSE_INDEX|Nifty 50',
                 'NSE_INDEX|Nifty Bank',
-                'NSE_INDEX|Nifty Fin Service',
+                // 'NSE_INDEX|Nifty Fin Service',
             ];
+            const user = await db[MODEL.USER].findOne({
+                where: { email: USER_DETAILS.EMAIL },
+            });
+            const accessToken = user.token;
             await Promise.all(
                 INDEXES.map(async (indexes) => {
-                    const accessToken = process.env.OAUTH2_ACCESS_TOKEN;
                     const config = {
                         method: 'get',
-                        url: 'https://api.upstox.com/v2/option/contract',
+                        url: `https://api.upstox.com/v2/option/contract?instrument_key=${indexes}`,
                         headers: {
                             Authorization: `Bearer ${accessToken}`,
                             Accept: 'application/json',
                         },
-                        params: {
-                            instrument_key: indexes,
-                        },
-                        maxBodyLength: Infinity,
+                        // params: {
+                        //     instrument_key: indexes,
+                        // },
+                        // maxBodyLength: Infinity,
                     };
                     const response = await axios(config);
                     for (let data of response.data?.data) {
@@ -208,46 +259,50 @@ class InstrumentsController {
     /*************  ✨ Windsurf Command 🌟  *************/
     async strike_to_genrate_options(req, res, next) {
         try {
-            const accessToken = process.env.OAUTH2_ACCESS_TOKEN;
+            const user = await db[MODEL.USER].findOne({
+                where: { email: USER_DETAILS.EMAIL },
+            });
+            const accessToken = user.token;
             const indexes = {
                 MONDAY: [
                     INDEXES_NAMES.BANKNIFTY,
-                    INDEXES_NAMES.FINNITY,
-                    INDEXES_NAMES.NIFTY_50,
-                    INDEXES_NAMES.MIDCAP,
+                    // INDEXES_NAMES.FINNITY,
+                    // INDEXES_NAMES.NIFTY_50,
+                    // INDEXES_NAMES.MIDCAP,
                 ],
                 TUESDAY: [
                     INDEXES_NAMES.BANKNIFTY,
-                    INDEXES_NAMES.MIDCAP,
-                    INDEXES_NAMES.NIFTY_50,
+                    // INDEXES_NAMES.MIDCAP,
+                    // INDEXES_NAMES.NIFTY_50,
                 ],
                 WEDNESDAY: [
-                    INDEXES_NAMES.FINNITY,
-                    INDEXES_NAMES.MIDCAP,
-                    INDEXES_NAMES.NIFTY_50,
+                    // INDEXES_NAMES.FINNITY,
+                    // INDEXES_NAMES.MIDCAP,
+                    // INDEXES_NAMES.NIFTY_50,
+                    INDEXES_NAMES.BANKNIFTY,
                 ],
                 THURSDAY: [
                     INDEXES_NAMES.BANKNIFTY,
-                    INDEXES_NAMES.FINNITY,
-                    INDEXES_NAMES.MIDCAP,
+                    // INDEXES_NAMES.FINNITY,
+                    // INDEXES_NAMES.MIDCAP,
                 ],
                 FRIDAY: [
                     INDEXES_NAMES.BANKNIFTY,
-                    INDEXES_NAMES.FINNITY,
-                    INDEXES_NAMES.MIDCAP,
-                    INDEXES_NAMES.NIFTY_50,
+                    // INDEXES_NAMES.FINNITY,
+                    // INDEXES_NAMES.MIDCAP,
+                    // INDEXES_NAMES.NIFTY_50,
                 ],
                 SATURDAY: [
                     INDEXES_NAMES.BANKNIFTY,
-                    INDEXES_NAMES.FINNITY,
-                    INDEXES_NAMES.MIDCAP,
-                    INDEXES_NAMES.NIFTY_50,
+                    // INDEXES_NAMES.FINNITY,
+                    // INDEXES_NAMES.MIDCAP,
+                    // INDEXES_NAMES.NIFTY_50,
                 ],
                 SUNDAY: [
                     INDEXES_NAMES.BANKNIFTY,
-                    INDEXES_NAMES.FINNITY,
-                    INDEXES_NAMES.MIDCAP,
-                    INDEXES_NAMES.NIFTY_50,
+                    // INDEXES_NAMES.FINNITY,
+                    // INDEXES_NAMES.MIDCAP,
+                    // INDEXES_NAMES.NIFTY_50,
                 ],
             };
             // const currnet_day = get_current_day_name();
@@ -468,18 +523,38 @@ class InstrumentsController {
     }
     async strike_genrate(req, res, next) {
         try {
-            const current_strike = await current_strike_price(INDEXES.MIDCAP);
-            const expirey_date = await get_upcoming_expiry_date(
-                INDEXES_NAMES.MIDCAP,
+            const {
+                body: {
+                    data: { add_pluse_count },
+                },
+            } = req;
+            const current_strike = await current_strike_price(
+                INDEXES.BANKNIFTY,
             );
+            const expirey_date = await get_upcoming_expiry_date(
+                INDEXES_NAMES.BANKNIFTY,
+            );
+            console.log(expirey_date);
+
             const roundedStrike = Math.round(current_strike / 100) * 100;
-            const find_options = await db[MODEL.OPTIONS_CHAINS].findAll({
+            let find_options = [];
+            const find_options_ce = await db[MODEL.OPTIONS_CHAINS].findAll({
                 where: {
                     expiry: expirey_date,
-                    name: INDEXES_NAMES.MIDCAP,
-                    strike_price: roundedStrike,
+                    name: INDEXES_NAMES.BANKNIFTY,
+                    strike_price: roundedStrike + add_pluse_count,
+                    instrument_type: 'CE',
                 },
             });
+            const find_options_pe = await db[MODEL.OPTIONS_CHAINS].findAll({
+                where: {
+                    expiry: expirey_date,
+                    name: INDEXES_NAMES.BANKNIFTY,
+                    strike_price: roundedStrike - add_pluse_count,
+                    instrument_type: 'PE',
+                },
+            });
+            find_options = [...find_options_ce, ...find_options_pe];
             await db[MODEL.STRIKE_MODEL].destroy({
                 where: {},
                 force: true,

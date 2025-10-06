@@ -12,6 +12,7 @@ export enum END_POINTS {
     LOGIN = '/login',
     INSTRUMENT = '/instrument',
     INSTRUMENT_INSTALL = '/install',
+    INSTRUMENT_INSTALL_JSON = '/install-json',
     OPTIONS_STOCK = '/options-stock',
     OPTIONS_STOCK_ACTIVE = '/options-stock-active/:id',
     GET_STRIKE = '/get-strike',

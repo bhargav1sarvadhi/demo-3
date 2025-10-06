@@ -7,11 +7,13 @@ import axios from 'axios';
 
 export const get_upcoming_expiry_date = async (indexes_name) => {
     const currentDate = moment().startOf('day').format('YYYY-MM-DD');
+    console.log(currentDate, 'cuurent datae');
+
     const nextExpiry = await db[MODEL.OPTIONS_CHAINS].findOne({
         where: {
             name: indexes_name,
             expiry: {
-                [Op.gt]: currentDate,
+                [Op.gte]: currentDate,
             },
         },
         order: [['expiry', 'ASC']],
