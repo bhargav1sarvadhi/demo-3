@@ -48,6 +48,10 @@ export const tradeModel = (sequelize) => {
                 type: DataTypes.FLOAT,
                 defaultValue: 0,
             },
+            target_price: {
+                type: DataTypes.FLOAT,
+                defaultValue: 0,
+            },
             pl: {
                 type: DataTypes.FLOAT,
                 defaultValue: 0,
