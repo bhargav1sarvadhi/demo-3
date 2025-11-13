@@ -1112,7 +1112,7 @@ class StrategyController {
             const startTime = new Date(`${formattedDate}T09:30:00+05:30`);
             const trade_startTime = new Date(`${formattedDate}T09:30:00+05:30`);
             const endTime = new Date(`${formattedDate}T15:19:00+05:30`);
-            const trade_endTime = new Date(`${formattedDate}T14:19:00+05:30`);
+            const trade_endTime = new Date(`${formattedDate}T15:19:00+05:30`);
             const currnet_day = get_current_day_name();
             if (currentISTDate >= startTime && currentISTDate <= endTime) {
                 const find_strategy = await db[MODEL.POSITION].findOne({
@@ -1193,8 +1193,6 @@ class StrategyController {
                         }
                         console.log('endd');
                     }
-                    console.log(find_trade.stop_loss >= find_trade.ltp);
-                    console.log(find_trade.target_price <= find_trade.ltp);
 
                     if (find_trade.stop_loss >= find_trade.ltp) {
                         const trade_closed = await db[MODEL.TRADE].update(

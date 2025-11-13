@@ -76,6 +76,7 @@ class InstrumentRoutes extends BaseRoute {
             paginationMiddleware,
             instrumentsController.current_postions,
         );
+        this.router.get(END_POINTS.DASHBOARD, instrumentsController.dashboard);
     }
 }
 export const instrumentRoutes = new InstrumentRoutes().router;

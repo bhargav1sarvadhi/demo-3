@@ -33,4 +33,5 @@ export enum END_POINTS {
     STOCK_LIST = '/stock-list',
     TRADE_HISTORY_LIST = '/trade-history-list',
     CURRENT_POSTIONS = '/current-postions',
+    DASHBOARD = '/dashboard-data',
 }
