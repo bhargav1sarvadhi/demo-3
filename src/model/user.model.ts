@@ -31,6 +31,10 @@ export const userModel = (sequelize) => {
                 type: DataTypes.STRING,
                 allowNull: true,
             },
+            balance: {
+                type: DataTypes.FLOAT,
+                defaultValue: 0,
+            },
         },
         {
             paranoid: true,
