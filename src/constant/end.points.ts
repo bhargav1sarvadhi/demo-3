@@ -29,4 +29,8 @@ export enum END_POINTS {
     ADD_HEDGING_OPTIONS = '/add-hedging-options',
     INSTRUMENT_TO_OPTIONSCHAIN = '/instrument-to-options-chain',
     CHECK_SCALLPING = '/check-scaplling',
+    CHECK_ORDER_PLACE = '/check-order-place-upstocks',
+    STOCK_LIST = '/stock-list',
+    TRADE_HISTORY_LIST = '/trade-history-list',
+    CURRENT_POSTIONS = '/current-postions',
 }

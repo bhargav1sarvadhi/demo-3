@@ -1,6 +1,7 @@
 import BaseRoute from '../base.routes';
 import { END_POINTS, ROLES } from '../../constant/index';
 import { instrumentsController, strategyController } from '../../controller';
+import { paginationMiddleware } from '../../middleware';
 
 class InstrumentRoutes extends BaseRoute {
     async initializeRoutes() {
@@ -55,6 +56,25 @@ class InstrumentRoutes extends BaseRoute {
         this.router.get(
             END_POINTS.CHECK_SCALLPING,
             instrumentsController.check_scalping,
+        );
+        this.router.post(
+            END_POINTS.CHECK_ORDER_PLACE,
+            instrumentsController.check_order_place,
+        );
+        this.router.get(
+            END_POINTS.STOCK_LIST,
+            paginationMiddleware,
+            instrumentsController.stock_list,
+        );
+        this.router.get(
+            END_POINTS.TRADE_HISTORY_LIST,
+            paginationMiddleware,
+            instrumentsController.trade_historylist,
+        );
+        this.router.get(
+            END_POINTS.CURRENT_POSTIONS,
+            paginationMiddleware,
+            instrumentsController.current_postions,
         );
     }
 }

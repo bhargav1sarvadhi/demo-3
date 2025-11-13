@@ -22,6 +22,7 @@ import {
     strike_around_ce_pe,
     strike_around_start_end,
 } from './stock.helper';
+import { place_order_on_upstocks } from './upstocks.apis';
 import { validateReq } from './validation.helper';
 
 export {
@@ -46,4 +47,5 @@ export {
     getISTTime,
     getCurrentISTDate,
     find_sbin_stocks,
+    place_order_on_upstocks,
 };

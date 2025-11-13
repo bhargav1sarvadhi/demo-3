@@ -21,6 +21,7 @@ import {
     get_current_day_name,
     get_next_day_name,
     get_upcoming_expiry_date,
+    place_order_on_upstocks,
     strike_around_ce_pe,
     strike_around_start_end,
 } from '../helpers';
@@ -748,6 +749,158 @@ class InstrumentsController {
             return sendResponse(res, {
                 responseType: RES_STATUS.GET,
                 data: data,
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+
+    async check_order_place(req, res, next) {
+        try {
+            const {
+                body: {
+                    data: { instrument_key, token, lot_size, transaction_type },
+                },
+            } = req;
+            console.log(instrument_key, token, lot_size, transaction_type);
+
+            const order_placed = await place_order_on_upstocks({
+                instrument_key: instrument_key,
+                accessToken: token,
+                quantity: lot_size,
+                transaction_type: transaction_type,
+            });
+
+            return sendResponse(res, {
+                responseType: RES_STATUS.GET,
+                data: order_placed,
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+
+    async stock_list(req, res, next) {
+        try {
+            const data = await db[MODEL.STRIKE_MODEL].findAll({
+                ...req.paginations,
+            });
+            const count = await db[MODEL.STRIKE_MODEL].count({});
+            return sendResponse(res, {
+                responseType: RES_STATUS.GET,
+                data: data,
+                total: count,
+                paginations: {
+                    offset: req.paginations?.offset,
+                    limit: req.paginations?.limit,
+                },
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+    async trade_historylist(req, res, next) {
+        try {
+            const {
+                query: { toDate, fromDate },
+            } = req;
+            let formated_data = [];
+            const data = await db[MODEL.TRADE].findAll({
+                where: {
+                    createdAt: {
+                        [Op.between]: [fromDate, toDate],
+                    },
+                },
+                ...req.paginations,
+                order: [['createdAt', 'DESC']],
+            });
+            const count = await db[MODEL.TRADE].count({
+                where: {
+                    createdAt: {
+                        [Op.between]: [fromDate, toDate],
+                    },
+                },
+            });
+
+            if (data.length > 0) {
+                await Promise.all(
+                    data.map(async (datas) => {
+                        formated_data.push({
+                            id: datas.trade_id,
+                            date: datas.createdAt,
+                            symbol: datas.trading_symbol,
+                            buyPrice: datas.buy_price,
+                            sellPrice: datas.sell_price,
+                            quantity:
+                                Number(datas.lot_size) * Number(datas.qty),
+                            profitLoss: datas.pl,
+                            duration: datas.duration,
+                            stopplose: datas.stop_loss,
+                            target: datas.target_price,
+                            status: datas.is_active ? 'Active' : 'Deactive',
+                        });
+                    }),
+                );
+            }
+            return sendResponse(res, {
+                responseType: RES_STATUS.GET,
+                data: formated_data,
+                total: count,
+                paginations: {
+                    offset: req.paginations?.offset,
+                    limit: req.paginations?.limit,
+                },
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+
+    async current_postions(req, res, next) {
+        try {
+            let formated_data = [];
+            const trades = await db[MODEL.TRADE].findAll({
+                where: {
+                    createdAt: {
+                        [Op.between]: [
+                            moment().startOf('day'),
+                            moment().endOf('day'),
+                        ],
+                    },
+                },
+                order: [['createdAt', 'DESC']],
+            });
+            if (trades.length > 0) {
+                await Promise.all(
+                    trades.map(async (datas) => {
+                        formated_data.push({
+                            id: datas.trade_id,
+                            entryDate: datas.createdAt,
+                            symbol: datas.trading_symbol,
+                            buyPrice: datas.buy_price,
+                            sellPrice: datas.sell_price,
+                            currentLTP: datas.ltp,
+                            target: datas.target_price,
+                            stopploss: datas.stop_loss,
+                            profitLoss: datas.pl,
+                            quantity:
+                                Number(datas.lot_size) * Number(datas.qty),
+                            status: datas.is_active ? 'in_trade' : 'closed',
+                        });
+                    }),
+                );
+            }
+            return sendResponse(res, {
+                responseType: RES_STATUS.GET,
+                data: formated_data,
+                paginations: {
+                    offset: req.paginations?.offset,
+                    limit: req.paginations?.limit,
+                },
                 message: res.__('instruments').insert,
             });
         } catch (error) {

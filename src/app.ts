@@ -33,7 +33,6 @@ let defaultClient = UpstoxClient.ApiClient.instance;
 let apiVersion = '3.0';
 let OAUTH2 = defaultClient.authentications['OAUTH2'];
 let updateBuffer = {};
-// OAUTH2.accessToken = process.env.OAUTH2_ACCESS_TOKEN;
 
 const port = process.env.PORT_SERVER || 8000;
 const stocks = new Map<string, any>();
@@ -94,7 +93,11 @@ class AppServer {
         try {
             await this.initProtobuf();
             const wsUrl = await this.getMarketFeedUrl();
+            const wsPortfolioUrl = await this.getPortfolioFeedUrl();
             const ws = await this.connectWebSocket(wsUrl);
+            const portfolio_ws = await this.connectPortfolioWebSocket(
+                wsPortfolioUrl,
+            );
         } catch (error) {
             console.error('An error occurred:', error.message);
         }
@@ -109,7 +112,7 @@ class AppServer {
             if (!user || !user.token) {
                 throw new Error('User token not found');
             }
-
+            OAUTH2.accessToken = user.token;
             const url =
                 'https://api.upstox.com/v3/feed/market-data-feed/authorize';
 
@@ -125,6 +128,23 @@ class AppServer {
             console.error('Error in getMarketFeedUrl:', error.message || error);
             throw error;
         }
+    }
+    async getPortfolioFeedUrl() {
+        return new Promise((resolve, reject) => {
+            let apiInstance = new UpstoxClient.WebsocketApi();
+            apiInstance.getPortfolioStreamFeedAuthorize(
+                '2.0',
+                (error, data, response) => {
+                    if (error) {
+                        // If there's an error, log it and reject the promise
+                        console.log(error);
+                    } else {
+                        // If no error, log the returned data and resolve the promise
+                        resolve(data.data.authorizedRedirectUri);
+                    }
+                },
+            );
+        });
     }
 
     initProtobuf = async () => {
@@ -193,6 +213,8 @@ class AppServer {
             ws.on('message', async (data) => {
                 // console.log(JSON.stringify(data));
                 const stocks_data: any = this.decodeProfobuf(data);
+
+                await strategyController.scallping_strategy_new();
 
                 // console.log(stocks_data);
                 // if (stocks_data && stocks_data.feeds) {
@@ -268,29 +290,95 @@ class AppServer {
                 // strategyController.percentage_strategy();
                 // strategyController.sbin_timing_strategy();
                 // strategyController.percentage_without_contions_strategy();
-                // const postions = async () => {
-                //     const postions = await db[MODEL.POSITION].findAll({
-                //         include: [
-                //             {
-                //                 model: db[MODEL.TRADE],
-                //             },
-                //         ],
-                //         where: {
-                //             date: moment().format('YYYY-MM-DD'),
-                //         },
-                //         order: [
-                //             ['start_time', 'ASC'],
-                //             ['date', 'DESC'],
-                //         ],
-                //     });
-                //     const totalPL = postions.reduce((sum, position) => {
-                //         return sum + position.pl;
-                //     }, 0);
-                //     // console.log('Total PL:', totalPL);
-                //     this.io.emit('stock_data', { postions, totalPL: totalPL });
-                // };
-                // postions();
+                const postions = async () => {
+                    let formated_data = [];
+                    const trades = await db[MODEL.TRADE].findAll({
+                        where: {
+                            createdAt: {
+                                [Op.between]: [
+                                    moment().startOf('day'),
+                                    moment().endOf('day'),
+                                ],
+                            },
+                        },
+                        order: [['createdAt', 'DESC']],
+                    });
+                    if (trades.length > 0) {
+                        await Promise.all(
+                            trades.map(async (datas) => {
+                                formated_data.push({
+                                    id: datas.trade_id,
+                                    entryDate: datas.createdAt,
+                                    symbol: datas.trading_symbol,
+                                    buyPrice: datas.buy_price,
+                                    sellPrice: datas.sell_price,
+                                    currentLTP: datas.ltp,
+                                    target: datas.target_price,
+                                    stopploss: datas.stop_loss,
+                                    profitLoss: datas.pl,
+                                    quantity:
+                                        Number(datas.lot_size) *
+                                        Number(datas.qty),
+                                    status: datas.is_active
+                                        ? 'in_trade'
+                                        : 'closed',
+                                });
+                            }),
+                        );
+                    }
+                    // console.log('Total PL:', totalPL);
+                    this.io.emit('stock_data', { data: formated_data });
+                };
+                postions();
             });
+            ws.on('error', (error) => {
+                console.error('WebSocket error:', error);
+                reject(error);
+            });
+        });
+    }
+    async connectPortfolioWebSocket(wsPortfolioUrl) {
+        return new Promise<WebSocket>((resolve, reject) => {
+            const ws = new WebSocket(wsPortfolioUrl, {
+                headers: {
+                    'Api-Version': apiVersion,
+                    Authorization: 'Bearer ' + OAUTH2.accessToken,
+                },
+                followRedirects: true,
+            });
+            ws.on('open', function open() {
+                console.log('connected order update ');
+                resolve(ws); // Resolve the promise when the WebSocket is opened
+            });
+
+            ws.on('close', function close() {
+                console.log('disconnected order update');
+            });
+
+            ws.on('message', async function message(data) {
+                const order_data = JSON.parse(data.toString());
+                console.log(order_data);
+
+                const find_order = await db[MODEL.UPSTOCK_ORDERS].findOne({
+                    where: {
+                        upstock_order_id: order_data.order_id,
+                    },
+                });
+
+                if (find_order) {
+                    await db[MODEL.UPSTOCK_ORDERS].update(
+                        {
+                            status: order_data.status,
+                        },
+                        {
+                            where: {
+                                upstock_order_id: order_data.order_id,
+                            },
+                        },
+                    );
+                }
+            });
+
             ws.on('error', (error) => {
                 console.error('WebSocket error:', error);
                 reject(error);

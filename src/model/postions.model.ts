@@ -45,6 +45,10 @@ export const positionModel = (sequelize) => {
                 type: DataTypes.FLOAT,
                 allowNull: true,
             },
+            is_exectued: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false,
+            },
         },
         {
             paranoid: true,
