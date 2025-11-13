@@ -18,6 +18,10 @@ export const UpstocksOrderModel = (sequelize) => {
                 type: DataTypes.TEXT,
                 allowNull: true,
             },
+            order_type: {
+                type: DataTypes.TEXT,
+                allowNull: true,
+            },
             status: {
                 type: DataTypes.TEXT,
                 defaultValue: 'Pending',
