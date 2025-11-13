@@ -34,4 +34,5 @@ export enum END_POINTS {
     TRADE_HISTORY_LIST = '/trade-history-list',
     CURRENT_POSTIONS = '/current-postions',
     DASHBOARD = '/dashboard-data',
+    WEBHOOKS_TOKEN = '/upstock/webhooks/token',
 }

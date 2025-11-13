@@ -5,6 +5,7 @@ import { instrumentRoutes } from './instruments/instrument.routes';
 import { authRoutes } from './auth/auth.routes';
 import { dashboardRoutes } from './dashboard/dashboard.routes';
 import passport from 'passport';
+import { instrumentsController } from '../controller';
 
 class InvalidedRouter {
     handleRequest(req, res, next) {
@@ -26,6 +27,10 @@ class MainRouter {
     }
 
     setupRoutes() {
+        this.router.post(
+            END_POINTS.WEBHOOKS_TOKEN,
+            instrumentsController.webhooks_notification_token,
+        );
         this.router.use(END_POINTS.INSTRUMENT, instrumentRoutes);
         this.router.use(END_POINTS.STOCK, authRoutes);
         this.router.use(

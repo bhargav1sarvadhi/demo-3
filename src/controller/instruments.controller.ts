@@ -942,6 +942,31 @@ class InstrumentsController {
             return next(error);
         }
     }
+
+    async webhooks_notification_token(req, res, next) {
+        try {
+            const {
+                body: { access_token },
+            } = req;
+
+            console.log(req.body);
+
+            if (access_token) {
+                const user = await db[MODEL.USER].findOne({
+                    where: { email: USER_DETAILS.EMAIL },
+                });
+
+                const update = await db[MODEL.USER].update(
+                    { token: access_token },
+                    { where: { email: USER_DETAILS.EMAIL } },
+                );
+
+                console.log(update);
+            }
+        } catch (error) {
+            return next(error);
+        }
+    }
 }
 
 export const instrumentsController = new InstrumentsController();
