@@ -27,6 +27,7 @@ import {
 } from '../helpers';
 import { options } from 'joi';
 import { strategyController } from './strategy.controller';
+import sequelize from 'sequelize';
 const csv = require('csv-parser');
 
 class InstrumentsController {
@@ -835,8 +836,19 @@ class InstrumentsController {
             const data = await db[MODEL.STRIKE_MODEL].findAll({
                 ...req.paginations,
                 order: [
-                    ['instrument_type', 'ASC'], // Second priority
-                    ['strike_price', 'ASC'], // First priority
+                    [sequelize.literal('"is_active" DESC')],
+
+                    // 2. instrument_type → CE first, PE second
+                    [
+                        sequelize.literal(`CASE 
+                                WHEN instrument_type = 'CE' THEN 1 
+                                WHEN instrument_type = 'PE' THEN 2 
+                                ELSE 3 
+                            END ASC`),
+                    ],
+
+                    // 3. strike_number → ascending
+                    ['strike_number', 'ASC'],
                 ],
             });
             const count = await db[MODEL.STRIKE_MODEL].count({});
