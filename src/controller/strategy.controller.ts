@@ -1109,8 +1109,8 @@ class StrategyController {
             const currentISTDate = getCurrentISTDate();
             const formattedDate = currentISTDate.toISOString().slice(0, 10);
             const currentTime = getISTTime(currentISTDate);
-            const startTime = new Date(`${formattedDate}T09:17:00+05:30`);
-            const trade_startTime = new Date(`${formattedDate}T09:15:00+05:30`);
+            const startTime = new Date(`${formattedDate}T09:15:00+05:30`);
+            const trade_startTime = new Date(`${formattedDate}T09:45:00+05:30`);
             const endTime = new Date(`${formattedDate}T15:19:00+05:30`);
             const trade_endTime = new Date(`${formattedDate}T15:19:00+05:30`);
             const currnet_day = get_current_day_name();
