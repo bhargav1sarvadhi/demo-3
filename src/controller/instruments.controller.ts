@@ -949,6 +949,8 @@ class InstrumentsController {
                 body: { access_token },
             } = req;
 
+            console.log('calling webhooks');
+
             console.log(req.body);
 
             if (access_token) {

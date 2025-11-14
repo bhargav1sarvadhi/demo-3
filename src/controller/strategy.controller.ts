@@ -1109,8 +1109,8 @@ class StrategyController {
             const currentISTDate = getCurrentISTDate();
             const formattedDate = currentISTDate.toISOString().slice(0, 10);
             const currentTime = getISTTime(currentISTDate);
-            const startTime = new Date(`${formattedDate}T09:30:00+05:30`);
-            const trade_startTime = new Date(`${formattedDate}T09:30:00+05:30`);
+            const startTime = new Date(`${formattedDate}T09:17:00+05:30`);
+            const trade_startTime = new Date(`${formattedDate}T09:15:00+05:30`);
             const endTime = new Date(`${formattedDate}T15:19:00+05:30`);
             const trade_endTime = new Date(`${formattedDate}T15:19:00+05:30`);
             const currnet_day = get_current_day_name();
@@ -1421,176 +1421,18 @@ class StrategyController {
                                         });
 
                                         if (stcoks && stcoks.instrument_key) {
-                                            const create_postions = await db[
-                                                MODEL.POSITION
-                                            ].create({
-                                                strategy_id:
-                                                    '50e7fd1e-54e6-4686-93d0-c0adbaff65bf',
-                                                strategy_name:
-                                                    STRATEGY.SCALLPING,
-                                                is_active: true,
-                                                qty: 1,
-                                                trade_id: Math.floor(
-                                                    100000 +
-                                                        Math.random() * 900000,
-                                                ),
-                                                date: formattedDate,
-                                                start_time: currentISTDate,
-                                                required_margin:
-                                                    Number(stcoks.ltp) *
-                                                    Number(stcoks.lot_size),
-                                            });
+                                            const buy_price = stcoks.ltp;
+                                            const target_price =
+                                                stcoks.ltp +
+                                                (stcoks.ltp - lastCandle.low) *
+                                                    1.5;
+                                            const stop_loss_price =
+                                                lastCandle.low;
 
-                                            if (create_postions) {
-                                                const trade_placed = await db[
-                                                    MODEL.TRADE
-                                                ].create({
-                                                    position_id:
-                                                        create_postions.id,
-                                                    options_chain_id: stcoks.id,
-                                                    trade_id:
-                                                        create_postions.trade_id,
-                                                    strategy_name:
-                                                        STRATEGY.SCALLPING,
-                                                    trading_symbol:
-                                                        stcoks.trading_symbol,
-                                                    instrument_key:
-                                                        stcoks.instrument_key,
-                                                    instrument_type:
-                                                        stcoks.instrument_type,
-                                                    trade_type: 'BUY',
-                                                    buy_price: stcoks.ltp,
-                                                    target_price:
-                                                        stcoks.ltp +
-                                                        (stcoks.ltp -
-                                                            lastCandle.low) *
-                                                            1.5,
-                                                    stop_loss: lastCandle.low,
-                                                    is_active: true,
-                                                    ltp: stcoks.ltp,
-                                                    qty: 1,
-                                                    lot_size: stcoks.lot_size,
-                                                });
-                                                if (trade_placed) {
-                                                    logger.info(
-                                                        'Trade Placed Successfully',
-                                                    );
-                                                    if (
-                                                        process.env
-                                                            .UPSTOCKS_ACCOUNT ===
-                                                        'live'
-                                                    ) {
-                                                        const user = await db[
-                                                            MODEL.USER
-                                                        ].findOne({
-                                                            where: {
-                                                                email: USER_DETAILS.EMAIL,
-                                                            },
-                                                        });
-
-                                                        const order_placed =
-                                                            await place_order_on_upstocks(
-                                                                {
-                                                                    instrument_key:
-                                                                        stcoks.instrument_key,
-                                                                    accessToken:
-                                                                        user.token,
-                                                                    quantity:
-                                                                        stcoks.lot_size,
-                                                                    transaction_type:
-                                                                        'BUY',
-                                                                },
-                                                            );
-
-                                                        if (order_placed) {
-                                                            logger.info(
-                                                                'Upstock Order Placed Successfully',
-                                                            );
-                                                            console.log(
-                                                                order_placed,
-                                                            );
-
-                                                            if (
-                                                                order_placed.status ===
-                                                                    'success' &&
-                                                                order_placed
-                                                                    .data
-                                                                    .order_ids
-                                                                    .length > 0
-                                                            ) {
-                                                                const orders_done =
-                                                                    order_placed
-                                                                        .data
-                                                                        .order_ids;
-
-                                                                orders_done.map(
-                                                                    async (
-                                                                        order_id,
-                                                                    ) => {
-                                                                        await db[
-                                                                            MODEL
-                                                                                .UPSTOCK_ORDERS
-                                                                        ].create(
-                                                                            {
-                                                                                upstock_order_id:
-                                                                                    order_id,
-                                                                                postion_id:
-                                                                                    create_postions.id,
-                                                                                order_type:
-                                                                                    'BUY',
-                                                                            },
-                                                                        );
-                                                                    },
-                                                                );
-                                                            }
-                                                        } else {
-                                                            logger.error(
-                                                                'Order Not Placed',
-                                                            );
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            logger.info('Stock Not Found');
-                                        }
-                                    }
-                                    if (
-                                        lastEMA9 < lastEMA21 &&
-                                        prevEMA9 >= prevEMA21
-                                    ) {
-                                        console.log('SELL Signal');
-                                        const stcoks = await db[
-                                            MODEL.STRIKE_MODEL
-                                        ].findOne({
-                                            where: {
-                                                instrument_type: 'PE',
-                                            },
-                                        });
-
-                                        let find_candels_pe = await db[
-                                            MODEL.CANDELS
-                                        ].findAll({
-                                            where: {
-                                                instrument_key:
-                                                    stcoks.instrument_key,
-                                            },
-                                            order: [['ts', 'DESC']],
-                                            limit: 100,
-                                        });
-
-                                        if (find_candels_pe.length < 22) {
-                                            logger.info('Candel Not Found');
-                                        } else {
-                                            const reverse_candle =
-                                                find_candels_pe.reverse();
-                                            const last_make_candels_pe =
-                                                reverse_candle[
-                                                    find_candels_pe.length - 1
-                                                ];
                                             if (
-                                                stcoks &&
-                                                stcoks.instrument_key
+                                                buy_price > stop_loss_price &&
+                                                target_price > buy_price &&
+                                                target_price > stop_loss_price
                                             ) {
                                                 const create_postions =
                                                     await db[
@@ -1642,10 +1484,10 @@ class StrategyController {
                                                             target_price:
                                                                 stcoks.ltp +
                                                                 (stcoks.ltp -
-                                                                    last_make_candels_pe.low) *
+                                                                    lastCandle.low) *
                                                                     1.5,
                                                             stop_loss:
-                                                                last_make_candels_pe.low,
+                                                                lastCandle.low,
                                                             is_active: true,
                                                             ltp: stcoks.ltp,
                                                             qty: 1,
@@ -1656,7 +1498,6 @@ class StrategyController {
                                                         logger.info(
                                                             'Trade Placed Successfully',
                                                         );
-
                                                         if (
                                                             process.env
                                                                 .UPSTOCKS_ACCOUNT ===
@@ -1734,6 +1575,250 @@ class StrategyController {
                                                             }
                                                         }
                                                     }
+                                                }
+                                            } else {
+                                                logger.info(
+                                                    'target stoploss not match',
+                                                );
+                                                logger.info(
+                                                    'target price',
+                                                    target_price,
+                                                );
+                                                logger.info(
+                                                    'stoploss',
+                                                    stop_loss_price,
+                                                );
+                                                logger.info(
+                                                    'buyprice',
+                                                    buy_price,
+                                                );
+                                            }
+                                        } else {
+                                            logger.info('Stock Not Found');
+                                        }
+                                    }
+
+                                    // sell process
+
+                                    if (
+                                        lastEMA9 < lastEMA21 &&
+                                        prevEMA9 >= prevEMA21
+                                    ) {
+                                        console.log('SELL Signal');
+                                        const stcoks = await db[
+                                            MODEL.STRIKE_MODEL
+                                        ].findOne({
+                                            where: {
+                                                instrument_type: 'PE',
+                                            },
+                                        });
+
+                                        let find_candels_pe = await db[
+                                            MODEL.CANDELS
+                                        ].findAll({
+                                            where: {
+                                                instrument_key:
+                                                    stcoks.instrument_key,
+                                            },
+                                            order: [['ts', 'DESC']],
+                                            limit: 100,
+                                        });
+
+                                        if (find_candels_pe.length < 22) {
+                                            logger.info('Candel Not Found');
+                                        } else {
+                                            const reverse_candle =
+                                                find_candels_pe.reverse();
+                                            const last_make_candels_pe =
+                                                reverse_candle[
+                                                    find_candels_pe.length - 1
+                                                ];
+                                            if (
+                                                stcoks &&
+                                                stcoks.instrument_key
+                                            ) {
+                                                const buy_price = stcoks.ltp;
+                                                const stop_loss_price =
+                                                    last_make_candels_pe.low;
+                                                const target_price =
+                                                    stcoks.ltp +
+                                                    (stcoks.ltp -
+                                                        last_make_candels_pe.low) *
+                                                        1.5;
+
+                                                if (
+                                                    buy_price >
+                                                        stop_loss_price &&
+                                                    target_price > buy_price &&
+                                                    target_price >
+                                                        stop_loss_price
+                                                ) {
+                                                    const create_postions =
+                                                        await db[
+                                                            MODEL.POSITION
+                                                        ].create({
+                                                            strategy_id:
+                                                                '50e7fd1e-54e6-4686-93d0-c0adbaff65bf',
+                                                            strategy_name:
+                                                                STRATEGY.SCALLPING,
+                                                            is_active: true,
+                                                            qty: 1,
+                                                            trade_id:
+                                                                Math.floor(
+                                                                    100000 +
+                                                                        Math.random() *
+                                                                            900000,
+                                                                ),
+                                                            date: formattedDate,
+                                                            start_time:
+                                                                currentISTDate,
+                                                            required_margin:
+                                                                Number(
+                                                                    stcoks.ltp,
+                                                                ) *
+                                                                Number(
+                                                                    stcoks.lot_size,
+                                                                ),
+                                                        });
+
+                                                    if (create_postions) {
+                                                        const trade_placed =
+                                                            await db[
+                                                                MODEL.TRADE
+                                                            ].create({
+                                                                position_id:
+                                                                    create_postions.id,
+                                                                options_chain_id:
+                                                                    stcoks.id,
+                                                                trade_id:
+                                                                    create_postions.trade_id,
+                                                                strategy_name:
+                                                                    STRATEGY.SCALLPING,
+                                                                trading_symbol:
+                                                                    stcoks.trading_symbol,
+                                                                instrument_key:
+                                                                    stcoks.instrument_key,
+                                                                instrument_type:
+                                                                    stcoks.instrument_type,
+                                                                trade_type:
+                                                                    'BUY',
+                                                                buy_price:
+                                                                    stcoks.ltp,
+                                                                target_price:
+                                                                    stcoks.ltp +
+                                                                    (stcoks.ltp -
+                                                                        last_make_candels_pe.low) *
+                                                                        1.5,
+                                                                stop_loss:
+                                                                    last_make_candels_pe.low,
+                                                                is_active: true,
+                                                                ltp: stcoks.ltp,
+                                                                qty: 1,
+                                                                lot_size:
+                                                                    stcoks.lot_size,
+                                                            });
+                                                        if (trade_placed) {
+                                                            logger.info(
+                                                                'Trade Placed Successfully',
+                                                            );
+
+                                                            if (
+                                                                process.env
+                                                                    .UPSTOCKS_ACCOUNT ===
+                                                                'live'
+                                                            ) {
+                                                                const user =
+                                                                    await db[
+                                                                        MODEL
+                                                                            .USER
+                                                                    ].findOne({
+                                                                        where: {
+                                                                            email: USER_DETAILS.EMAIL,
+                                                                        },
+                                                                    });
+
+                                                                const order_placed =
+                                                                    await place_order_on_upstocks(
+                                                                        {
+                                                                            instrument_key:
+                                                                                stcoks.instrument_key,
+                                                                            accessToken:
+                                                                                user.token,
+                                                                            quantity:
+                                                                                stcoks.lot_size,
+                                                                            transaction_type:
+                                                                                'BUY',
+                                                                        },
+                                                                    );
+
+                                                                if (
+                                                                    order_placed
+                                                                ) {
+                                                                    logger.info(
+                                                                        'Upstock Order Placed Successfully',
+                                                                    );
+                                                                    console.log(
+                                                                        order_placed,
+                                                                    );
+
+                                                                    if (
+                                                                        order_placed.status ===
+                                                                            'success' &&
+                                                                        order_placed
+                                                                            .data
+                                                                            .order_ids
+                                                                            .length >
+                                                                            0
+                                                                    ) {
+                                                                        const orders_done =
+                                                                            order_placed
+                                                                                .data
+                                                                                .order_ids;
+
+                                                                        orders_done.map(
+                                                                            async (
+                                                                                order_id,
+                                                                            ) => {
+                                                                                await db[
+                                                                                    MODEL
+                                                                                        .UPSTOCK_ORDERS
+                                                                                ].create(
+                                                                                    {
+                                                                                        upstock_order_id:
+                                                                                            order_id,
+                                                                                        postion_id:
+                                                                                            create_postions.id,
+                                                                                        order_type:
+                                                                                            'BUY',
+                                                                                    },
+                                                                                );
+                                                                            },
+                                                                        );
+                                                                    }
+                                                                } else {
+                                                                    logger.error(
+                                                                        'Order Not Placed',
+                                                                    );
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                } else {
+                                                    logger.info(
+                                                        'target stoploss not match',
+                                                    );
+                                                    logger.info(
+                                                        'target price',
+                                                        target_price,
+                                                    );
+                                                    logger.info(
+                                                        'stoploss',
+                                                        stop_loss_price,
+                                                    );
+                                                    logger.info(
+                                                        'buyprice',
+                                                        buy_price,
+                                                    );
                                                 }
                                             } else {
                                                 logger.info('Stock Not Found');
