@@ -83,6 +83,10 @@ export const strikePriceModel = (sequelize) => {
                 type: DataTypes.INTEGER,
                 allowNull: true,
             },
+            is_active: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false,
+            },
         },
         {
             paranoid: true,

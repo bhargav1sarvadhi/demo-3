@@ -18,6 +18,7 @@ export enum END_POINTS {
     GET_STRIKE = '/get-strike',
     GET_STRIKE_TO_GENRATE_OPTIONS = '/strik-to-genrate-options',
     GENRATE_STRIKE = '/create-strike',
+    STRIKE_ACTIVE_DEACTIVE = '/strike-active-deactive/:id',
     HEDGING_INSTALL = '/hedging-time-table-install',
     STOCK = '/stock',
     CREATE_STRATEGY = '/create-strategy',

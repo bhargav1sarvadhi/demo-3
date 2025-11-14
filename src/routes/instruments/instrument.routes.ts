@@ -33,6 +33,10 @@ class InstrumentRoutes extends BaseRoute {
             END_POINTS.GENRATE_STRIKE,
             instrumentsController.strike_genrate,
         );
+        this.router.get(
+            END_POINTS.STRIKE_ACTIVE_DEACTIVE,
+            instrumentsController.is_active_deactive_strike_stock,
+        );
         this.router.post(
             END_POINTS.HEDGING_INSTALL,
             instrumentsController.insert_hedging_strategy,

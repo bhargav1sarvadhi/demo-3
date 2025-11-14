@@ -10,7 +10,7 @@ import {
     RES_TYPES,
     USER_DETAILS,
 } from '../constant';
-import { sendResponse } from '../utils';
+import { AppError, sendResponse } from '../utils';
 import path from 'path';
 import fs from 'fs';
 import axios from 'axios';
@@ -556,38 +556,86 @@ class InstrumentsController {
                 },
             });
             find_options = [...find_options_ce, ...find_options_pe];
-            await db[MODEL.STRIKE_MODEL].destroy({
-                where: {},
-                force: true,
-            });
+            // await db[MODEL.STRIKE_MODEL].destroy({
+            //     where: {},
+            //     force: true,
+            // });
             for (let data of find_options) {
                 const current_strike = await current_strike_price(
                     data.instrument_key,
                 );
-                await db[MODEL.STRIKE_MODEL].create({
-                    name: data.name,
-                    segment: data.segment,
-                    exchange: data.exchange,
-                    expiry: data.expiry,
-                    weekly: data.weekly,
-                    instrument_key: data.instrument_key,
-                    exchange_token: data.exchange_token,
-                    trading_symbol: data.trading_symbol,
-                    tick_size: data.tick_size,
-                    lot_size: data.lot_size,
-                    instrument_type: data.instrument_type,
-                    freeze_quantity: data.freeze_quantity,
-                    underlying_type: data.underlying_type,
-                    underlying_key: data.underlying_key,
-                    underlying_symbol: data.underlying_symbol,
-                    strike_price: data.strike_price,
-                    ltp: current_strike,
-                    minimum_lot: data.minimum_lot,
+
+                const find_stock = await db[MODEL.STRIKE_MODEL].findOne({
+                    where: {
+                        instrument_key: data.instrument_key,
+                    },
                 });
+
+                if (!find_stock) {
+                    await db[MODEL.STRIKE_MODEL].create({
+                        name: data.name,
+                        segment: data.segment,
+                        exchange: data.exchange,
+                        expiry: data.expiry,
+                        weekly: data.weekly,
+                        instrument_key: data.instrument_key,
+                        exchange_token: data.exchange_token,
+                        trading_symbol: data.trading_symbol,
+                        tick_size: data.tick_size,
+                        lot_size: data.lot_size,
+                        instrument_type: data.instrument_type,
+                        freeze_quantity: data.freeze_quantity,
+                        underlying_type: data.underlying_type,
+                        underlying_key: data.underlying_key,
+                        underlying_symbol: data.underlying_symbol,
+                        strike_price: data.strike_price,
+                        ltp: current_strike,
+                        minimum_lot: data.minimum_lot,
+                    });
+                }
             }
             return sendResponse(res, {
                 responseType: RES_STATUS.CREATE,
                 // data: strategy,
+                message: res.__('instruments').insert,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+
+    async is_active_deactive_strike_stock(req, res, next) {
+        try {
+            const {
+                params: { id },
+            } = req;
+
+            const find_stocks = await db[MODEL.STRIKE_MODEL].findOne({
+                where: { id },
+            });
+            if (!find_stocks) {
+                throw new AppError('Stock not found', ERRORTYPES.NOT_FOUND);
+            }
+            await db[MODEL.STRIKE_MODEL].update(
+                { is_active: false },
+                {
+                    where: {
+                        instrument_type: find_stocks.instrument_type,
+                    },
+                },
+            );
+
+            await db[MODEL.STRIKE_MODEL].update(
+                { is_active: true },
+                {
+                    where: {
+                        id: id,
+                    },
+                },
+            );
+
+            return sendResponse(res, {
+                responseType: RES_STATUS.UPDATE,
                 message: res.__('instruments').insert,
             });
         } catch (error) {
