@@ -834,6 +834,10 @@ class InstrumentsController {
         try {
             const data = await db[MODEL.STRIKE_MODEL].findAll({
                 ...req.paginations,
+                order: [
+                    ['instrument_type', 'ASC'], // Second priority
+                    ['strike_price', 'ASC'], // First priority
+                ],
             });
             const count = await db[MODEL.STRIKE_MODEL].count({});
             return sendResponse(res, {

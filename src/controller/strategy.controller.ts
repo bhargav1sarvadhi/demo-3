@@ -1360,6 +1360,7 @@ class StrategyController {
                             ].findOne({
                                 where: {
                                     instrument_type: 'CE',
+                                    is_active: true,
                                 },
                             });
 
@@ -1417,6 +1418,7 @@ class StrategyController {
                                         ].findOne({
                                             where: {
                                                 instrument_type: 'CE',
+                                                is_active: true,
                                             },
                                         });
 
@@ -1610,6 +1612,7 @@ class StrategyController {
                                         ].findOne({
                                             where: {
                                                 instrument_type: 'PE',
+                                                is_active: true,
                                             },
                                         });
 
