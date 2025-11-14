@@ -848,7 +848,7 @@ class InstrumentsController {
                     ],
 
                     // 3. strike_number → ascending
-                    ['strike_number', 'ASC'],
+                    ['strike_price', 'ASC'],
                 ],
             });
             const count = await db[MODEL.STRIKE_MODEL].count({});
