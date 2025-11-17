@@ -1123,7 +1123,31 @@ class StrategyController {
                 });
                 // console.log(find_strategy);
 
-                if (find_strategy) {
+                if (find_strategy && !find_strategy.is_exectued) {
+                    const find_trade = await db[MODEL.TRADE].findOne({
+                        where: {
+                            strategy_name: STRATEGY.SCALLPING,
+                            is_active: true,
+                            position_id: find_strategy.id,
+                        },
+                    });
+                    console.log(
+                        find_trade?.ltp >= find_trade?.buy_price,
+                        find_trade?.ltp,
+                        find_trade?.buy_price,
+                    );
+                    if (
+                        find_trade &&
+                        find_trade?.ltp >= find_trade?.buy_price
+                    ) {
+                        await db[MODEL.POSITION].update(
+                            {
+                                is_exectued: true,
+                            },
+                            { where: { id: find_strategy.id } },
+                        );
+                    }
+                } else if (find_strategy && find_strategy.is_exectued) {
                     console.log('postion check');
                     const find_trade = await db[MODEL.TRADE].findOne({
                         where: {
@@ -1423,7 +1447,7 @@ class StrategyController {
                                         });
 
                                         if (stcoks && stcoks.instrument_key) {
-                                            const buy_price = stcoks.ltp;
+                                            const buy_price = lastCandle.close;
                                             const target_price =
                                                 stcoks.ltp +
                                                 (stcoks.ltp - lastCandle.low) *
@@ -1482,7 +1506,7 @@ class StrategyController {
                                                                 stcoks.instrument_type,
                                                             trade_type: 'BUY',
                                                             buy_price:
-                                                                stcoks.ltp,
+                                                                lastCandle.close,
                                                             target_price:
                                                                 stcoks.ltp +
                                                                 (stcoks.ltp -
@@ -1640,7 +1664,8 @@ class StrategyController {
                                                 stcoks &&
                                                 stcoks.instrument_key
                                             ) {
-                                                const buy_price = stcoks.ltp;
+                                                const buy_price =
+                                                    last_make_candels_pe.close;
                                                 const stop_loss_price =
                                                     last_make_candels_pe.low;
                                                 const target_price =
@@ -1706,7 +1731,7 @@ class StrategyController {
                                                                 trade_type:
                                                                     'BUY',
                                                                 buy_price:
-                                                                    stcoks.ltp,
+                                                                    last_make_candels_pe.close,
                                                                 target_price:
                                                                     stcoks.ltp +
                                                                     (stcoks.ltp -
