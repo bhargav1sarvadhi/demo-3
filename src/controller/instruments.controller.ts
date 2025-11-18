@@ -954,6 +954,8 @@ class InstrumentsController {
                             quantity:
                                 Number(datas.lot_size) * Number(datas.qty),
                             status: datas.is_active ? 'in_trade' : 'closed',
+                            trade_time: datas.createdAt,
+                            strategy_name: datas.strategy_name,
                         });
                     }),
                 );

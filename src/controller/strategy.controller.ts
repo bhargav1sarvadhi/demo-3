@@ -2216,12 +2216,12 @@ class StrategyController {
                                         ];
 
                                     //BUY Signal
-                                    logger.info(
-                                        'BUYING RSI',
-                                        lastRSI,
-                                        lastRSI > 45,
-                                        lastRSI < 75,
-                                    );
+                                    // logger.info(
+                                    //     'BUYING RSI',
+                                    //     lastRSI,
+                                    //     lastRSI > 45,
+                                    //     lastRSI < 75,
+                                    // );
 
                                     if (
                                         lastEMA9 > lastEMA21 &&

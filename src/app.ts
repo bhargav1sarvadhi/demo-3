@@ -323,6 +323,8 @@ class AppServer {
                                     status: datas.is_active
                                         ? 'in_trade'
                                         : 'closed',
+                                    trade_time: data.createdAt,
+                                    strategy_name: data.strategy_name,
                                 });
                             }),
                         );
