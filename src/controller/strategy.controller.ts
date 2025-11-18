@@ -2084,6 +2084,7 @@ class StrategyController {
                             instrument_type: find_trade.instrument_type,
                             stop_loss_price: find_trade.stop_loss,
                             target_price: find_trade.target_price,
+                            trade_id: find_trade.id,
                         });
                     }
                 } else {
