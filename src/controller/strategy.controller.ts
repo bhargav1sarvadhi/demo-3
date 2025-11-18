@@ -1453,7 +1453,9 @@ class StrategyController {
                                                 (stcoks.ltp - lastCandle.low) *
                                                     1.5;
                                             const stop_loss_price =
-                                                lastCandle.low;
+                                                buy_price - lastCandle.low > 5
+                                                    ? lastCandle.low
+                                                    : buy_price - 5;
 
                                             if (
                                                 buy_price > stop_loss_price &&
@@ -1513,7 +1515,7 @@ class StrategyController {
                                                                     lastCandle.low) *
                                                                     1.5,
                                                             stop_loss:
-                                                                lastCandle.low,
+                                                                stop_loss_price,
                                                             is_active: true,
                                                             ltp: stcoks.ltp,
                                                             qty: 1,
@@ -1667,7 +1669,11 @@ class StrategyController {
                                                 const buy_price =
                                                     last_make_candels_pe.close;
                                                 const stop_loss_price =
-                                                    last_make_candels_pe.low;
+                                                    buy_price -
+                                                        last_make_candels_pe.low >
+                                                    5
+                                                        ? last_make_candels_pe.low
+                                                        : buy_price - 5;
                                                 const target_price =
                                                     stcoks.ltp +
                                                     (stcoks.ltp -
@@ -1738,7 +1744,7 @@ class StrategyController {
                                                                         last_make_candels_pe.low) *
                                                                         1.5,
                                                                 stop_loss:
-                                                                    last_make_candels_pe.low,
+                                                                    stop_loss_price,
                                                                 is_active: true,
                                                                 ltp: stcoks.ltp,
                                                                 qty: 1,
