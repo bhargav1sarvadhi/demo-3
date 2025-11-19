@@ -67,6 +67,7 @@ export enum MODEL {
     POSITION = 'positionModel',
     TRADE = 'tradeModel',
     UPSTOCK_ORDERS = 'UpstocksOrderModel',
+    TRADE_UPDATE = 'tradeUpdateModel',
 }
 
 export enum INDEXES {

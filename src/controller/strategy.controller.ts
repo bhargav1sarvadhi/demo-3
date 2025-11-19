@@ -3109,6 +3109,16 @@ class StrategyController {
                                         },
                                     },
                                 );
+
+                                const create_history = await db[
+                                    MODEL.TRADE_UPDATE
+                                ].create({
+                                    trade_id: data.trade_id,
+                                    trade_old_sl: data.stop_loss_price,
+                                    trade_new_sl: stop_loss_price,
+                                    trade_old_tg: data.target_price,
+                                    trade_new_tg: target_price,
+                                });
                             }
                         } else {
                             logger.info(
@@ -3138,6 +3148,15 @@ class StrategyController {
                                         },
                                     },
                                 );
+                                const create_history = await db[
+                                    MODEL.TRADE_UPDATE
+                                ].create({
+                                    trade_id: data.trade_id,
+                                    trade_old_sl: data.stop_loss_price,
+                                    trade_new_sl: stop_loss_price,
+                                    trade_old_tg: data.target_price,
+                                    trade_new_tg: target_price,
+                                });
                             }
                         } else {
                             logger.info(
