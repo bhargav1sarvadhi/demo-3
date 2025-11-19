@@ -8,6 +8,7 @@ import {
     MODEL,
     RES_STATUS,
     RES_TYPES,
+    STRATEGY,
     USER_DETAILS,
 } from '../constant';
 import { AppError, sendResponse } from '../utils';
@@ -979,6 +980,7 @@ class InstrumentsController {
             const startOfMonth = moment().startOf('month').toDate();
             const endOfMonth = moment().endOf('month').toDate();
             let pl = 0;
+            let tralling_pl = 0;
             const currentMonthTradeCount = await db[MODEL.TRADE].findAll({
                 where: {
                     createdAt: {
@@ -994,11 +996,28 @@ class InstrumentsController {
                     }),
                 );
             }
+            const currentMonthTrallingStop = await db[MODEL.TRADE].findAll({
+                where: {
+                    createdAt: {
+                        [Op.between]: [startOfMonth, endOfMonth],
+                    },
+                    strategy_name: STRATEGY.SCALLPING_TRAILLING,
+                },
+            });
+
+            if (currentMonthTrallingStop.length > 0) {
+                await Promise.all(
+                    currentMonthTrallingStop.map(async (datas) => {
+                        tralling_pl += Number(datas.pl);
+                    }),
+                );
+            }
 
             return sendResponse(res, {
                 responseType: RES_STATUS.GET,
                 data: {
                     monthlyProfitLoss: pl,
+                    tralling_pl: tralling_pl,
                     accountBalance: 0,
                     totalTrades: currentMonthTradeCount.length,
                 },
