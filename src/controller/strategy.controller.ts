@@ -2085,6 +2085,7 @@ class StrategyController {
                             stop_loss_price: find_trade.stop_loss,
                             target_price: find_trade.target_price,
                             trade_id: find_trade.id,
+                            pl: trade_pl,
                         });
                     }
                 } else {
@@ -3101,7 +3102,10 @@ class StrategyController {
                                 await db[MODEL.TRADE].update(
                                     {
                                         target_price: target_price,
-                                        stop_loss: stop_loss_price,
+                                        stop_loss:
+                                            data.pl > 100
+                                                ? stop_loss_price
+                                                : data.stop_loss_price,
                                     },
                                     {
                                         where: {
@@ -3115,7 +3119,10 @@ class StrategyController {
                                 ].create({
                                     trade_id: data.trade_id,
                                     trade_old_sl: data.stop_loss_price,
-                                    trade_new_sl: stop_loss_price,
+                                    trade_new_sl:
+                                        data.pl > 100
+                                            ? stop_loss_price
+                                            : data.stop_loss_price,
                                     trade_old_tg: data.target_price,
                                     trade_new_tg: target_price,
                                 });
@@ -3140,7 +3147,10 @@ class StrategyController {
                                 await db[MODEL.TRADE].update(
                                     {
                                         target_price: target_price,
-                                        stop_loss: stop_loss_price,
+                                        stop_loss:
+                                            data.pl > 100
+                                                ? stop_loss_price
+                                                : data.stop_loss_price,
                                     },
                                     {
                                         where: {
@@ -3153,7 +3163,10 @@ class StrategyController {
                                 ].create({
                                     trade_id: data.trade_id,
                                     trade_old_sl: data.stop_loss_price,
-                                    trade_new_sl: stop_loss_price,
+                                    trade_new_sl:
+                                        data.pl > 100
+                                            ? stop_loss_price
+                                            : data.stop_loss_price,
                                     trade_old_tg: data.target_price,
                                     trade_new_tg: target_price,
                                 });
