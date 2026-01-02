@@ -17,7 +17,7 @@ import { Op } from 'sequelize';
 import { INDEXES, STRATEGY, USER_DETAILS } from '../constant/response.types';
 
 cron.schedule(
-    '42 12 * * *',
+    '57 23 * * *',
     async () => {
         try {
             console.log('start cron');
@@ -28,16 +28,18 @@ cron.schedule(
             const accessToken = user.token;
             const INDEXES_NAME = [
                 // 'FINNIFTY',
-                'BANKNIFTY',
+                // 'BANKNIFTY',
                 // 'NIFTY',
                 // 'MIDCPNIFTY',
+                'STATE BANK OF INDIA',
             ];
             logger.info('cron started');
             const INDEXESES = [
                 // 'NSE_INDEX|NIFTY MID SELECT',
                 // 'NSE_INDEX|Nifty 50',
-                'NSE_INDEX|Nifty Bank',
+                // 'NSE_INDEX|Nifty Bank',
                 // 'NSE_INDEX|Nifty Fin Service',
+                'NSE_EQ|INE062A01020',
             ];
             await Promise.all(
                 INDEXESES.map(async (indexes) => {

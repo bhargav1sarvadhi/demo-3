@@ -94,14 +94,14 @@ class InstrumentsController {
     }
     async instrument_add_JSON(req, res, next) {
         try {
-            const files = ['../../src/uploads/complete.json'];
+            const files = ['../../src/uploads/complete2.json'];
+            const insertdata = [];
 
             for (const file of files) {
                 const jsonData: any = fs.readFileSync(
                     path.join(__dirname, file),
                 );
                 const data: any = JSON.parse(jsonData);
-                const insertdata = [];
                 data.map(async (raw) => {
                     const {
                         instrument_key,
@@ -123,17 +123,27 @@ class InstrumentsController {
                         segment,
                     } = raw;
 
-                    if (instrument_key == 'NSE_INDEX|Nifty Bank') {
+                    if (exchange == 'NSE') {
                         console.log(name);
-                        const rawinsert = await db[MODEL.INSTRUMENT].create(
-                            raw,
-                        );
-                        console.log(rawinsert);
+                        raw.expiry = moment(raw.expiry).format('YYYY-MM-DD');
+                        insertdata.push(raw);
+
+                        // const rawinsert = await db[MODEL.INSTRUMENT].create(
+                        //     raw,
+                        // );
+                        // console.log(rawinsert);
                     }
                 });
             }
-
-            return Promise.resolve();
+            await Promise.all(
+                await db[MODEL.INSTRUMENT].bulkCreate(insertdata),
+            );
+            console.log('insertdata', insertdata.length);
+            return sendResponse(res, {
+                responseType: RES_STATUS.CREATE,
+                // data: ,
+                message: res.__('instruments').insert,
+            });
         } catch (error) {
             console.error('Error seeding data:', error);
             throw error;
@@ -648,10 +658,11 @@ class InstrumentsController {
     async get_add_hedging_options_list(req, res, next) {
         try {
             const INDEXES_NAME = [
-                'FINNIFTY',
-                'BANKNIFTY',
-                'NIFTY',
-                'MIDCPNIFTY',
+                // 'FINNIFTY',
+                // 'BANKNIFTY',
+                // 'NIFTY',
+                // 'MIDCPNIFTY',
+                'STATE BANK OF INDIA',
             ];
             await Promise.all(
                 INDEXES_NAME.map(async (indexes) => {
@@ -672,11 +683,13 @@ class InstrumentsController {
                         await Promise.all(
                             options_datas.map(async (data) => {
                                 const [finded, created] = await db[
-                                    MODEL.HEDGING_OPTIONS
+                                    MODEL.STRIKE_MODEL
                                 ].findOrCreate({
-                                    where: { options_chain_id: data.id },
+                                    where: {
+                                        instrument_key: data['instrument_key'],
+                                    },
                                     defaults: {
-                                        options_chain_id: data['id'],
+                                        // options_chain_id: data['id'],
                                         name: data['name'],
                                         segment: data['segment'],
                                         exchange: data['exchange'],
@@ -706,7 +719,7 @@ class InstrumentsController {
                             }),
                         );
                         const delete_hedgs = await db[
-                            MODEL.HEDGING_OPTIONS
+                            MODEL.STRIKE_MODEL
                         ].destroy({
                             where: {
                                 name: indexes,
@@ -739,12 +752,13 @@ class InstrumentsController {
             const endDate = moment().endOf('month').format('YYYY-MM-DD');
             const instruments = await db[MODEL.INSTRUMENT].findAll({
                 where: {
-                    instrument_type: 'OPTSTK',
                     expiry: {
                         [Op.between]: [startDate, endDate],
                     },
+                    name: 'STATE BANK OF INDIA',
                 },
             });
+            console.log(instruments?.length);
 
             if (instruments.length > 0) {
                 await Promise.all(
