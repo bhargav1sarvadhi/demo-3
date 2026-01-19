@@ -1219,7 +1219,10 @@ class StrategyController {
                         console.log('endd');
                     }
 
-                    if (find_trade.stop_loss >= find_trade.ltp) {
+                    if (
+                        find_trade.stop_loss >= find_trade.ltp ||
+                        trade_pl <= -1000
+                    ) {
                         const trade_closed = await db[MODEL.TRADE].update(
                             {
                                 is_active: false,
@@ -1987,7 +1990,10 @@ class StrategyController {
                             );
                         }
                         console.log('endd');
-                    } else if (find_trade.stop_loss >= find_trade.ltp) {
+                    } else if (
+                        find_trade.stop_loss >= find_trade.ltp ||
+                        trade_pl <= -1000
+                    ) {
                         const trade_closed = await db[MODEL.TRADE].update(
                             {
                                 is_active: false,

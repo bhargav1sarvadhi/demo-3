@@ -39,7 +39,11 @@ const stocks = new Map<string, any>();
 
 class AppServer {
     private io: Server;
-
+    private marketWs: WebSocket | null = null;
+    private portfolioWs: WebSocket | null = null;
+    private orderUpdateWs: WebSocket | null = null;
+    private reconnectAttempts = 0;
+    private readonly MAX_RETRIES = 50;
     constructor() {
         const app: Express = express();
         const server = http.createServer(app);
@@ -101,6 +105,33 @@ class AppServer {
         } catch (error) {
             console.error('An error occurred:', error.message);
         }
+    }
+
+    private async reconnectMarketFeed() {
+        if (this.reconnectAttempts >= this.MAX_RETRIES) {
+            logger.error('Max reconnection attempts reached');
+            return;
+        }
+
+        const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30000);
+        this.reconnectAttempts++;
+
+        logger.warn(`Reconnecting market feed in ${delay} ms`);
+
+        setTimeout(async () => {
+            try {
+                const wsUrl = await this.getMarketFeedUrl();
+                this.marketWs = await this.connectWebSocket(wsUrl);
+                const wsPortfolioUrl = await this.getPortfolioFeedUrl();
+                this.orderUpdateWs = await this.connectPortfolioWebSocket(
+                    wsPortfolioUrl,
+                );
+                this.reconnectAttempts = 0;
+            } catch (err) {
+                logger.error('Reconnect failed:', err.message);
+                this.reconnectMarketFeed();
+            }
+        }, delay);
     }
 
     async getMarketFeedUrl() {
@@ -207,7 +238,8 @@ class AppServer {
                 }, 1000);
             });
             ws.on('close', () => {
-                console.log('disconnected');
+                console.log('disconnected main websockets');
+                this.reconnectMarketFeed();
             });
 
             ws.on('message', async (data) => {
@@ -356,6 +388,7 @@ class AppServer {
 
             ws.on('close', function close() {
                 console.log('disconnected order update');
+                this.reconnectMarketFeed();
             });
 
             ws.on('message', async function message(data) {
