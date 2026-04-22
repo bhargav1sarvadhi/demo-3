@@ -1221,7 +1221,7 @@ class StrategyController {
 
                     if (
                         find_trade.stop_loss >= find_trade.ltp ||
-                        trade_pl <= -1000
+                        trade_pl <= -3000
                     ) {
                         const trade_closed = await db[MODEL.TRADE].update(
                             {
@@ -1992,7 +1992,7 @@ class StrategyController {
                         console.log('endd');
                     } else if (
                         find_trade.stop_loss >= find_trade.ltp ||
-                        trade_pl <= -1000
+                        trade_pl <= -3000
                     ) {
                         const trade_closed = await db[MODEL.TRADE].update(
                             {
