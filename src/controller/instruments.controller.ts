@@ -913,46 +913,43 @@ class InstrumentsController {
     async trade_historylist(req, res, next) {
         try {
             const {
-                query: { toDate, fromDate },
+                query: { toDate, fromDate, strategy_name },
             } = req;
-            let formated_data = [];
-            const data = await db[MODEL.TRADE].findAll({
-                where: {
-                    createdAt: {
-                        [Op.between]: [fromDate, toDate],
-                    },
+            const where: Record<string, unknown> = {
+                createdAt: {
+                    [Op.between]: [fromDate, toDate],
                 },
+            };
+            if (strategy_name) {
+                where.strategy_name = strategy_name;
+            }
+
+            const data = await db[MODEL.TRADE].findAll({
+                where,
                 ...req.paginations,
                 order: [['createdAt', 'DESC']],
             });
-            const count = await db[MODEL.TRADE].count({
-                where: {
-                    createdAt: {
-                        [Op.between]: [fromDate, toDate],
-                    },
-                },
-            });
+            const count = await db[MODEL.TRADE].count({ where });
 
-            if (data.length > 0) {
-                await Promise.all(
-                    data.map(async (datas) => {
-                        formated_data.push({
-                            id: datas.trade_id,
-                            date: datas.createdAt,
-                            symbol: datas.trading_symbol,
-                            buyPrice: datas.buy_price,
-                            sellPrice: datas.sell_price,
-                            quantity:
-                                Number(datas.lot_size) * Number(datas.qty),
-                            profitLoss: datas.pl,
-                            duration: datas.duration,
-                            stopplose: datas.stop_loss,
-                            target: datas.target_price,
-                            status: datas.is_active ? 'Active' : 'Deactive',
-                        });
-                    }),
-                );
-            }
+            const formated_data = data.map((datas) => ({
+                id: datas.trade_id,
+                date: datas.createdAt,
+                symbol: datas.trading_symbol,
+                strategy_name: datas.strategy_name,
+                instrument_type: datas.instrument_type,
+                buyPrice: datas.buy_price,
+                sellPrice: datas.sell_price,
+                quantity: Number(datas.lot_size) * Number(datas.qty),
+                profitLoss: datas.pl,
+                netPl: Number(datas.net_pl ?? datas.pl ?? 0),
+                charges: Number(datas.charges ?? 0),
+                duration: datas.duration,
+                stopplose: datas.stop_loss,
+                target: datas.target_price,
+                exit_reason: datas.exit_reason,
+                status: datas.is_active ? 'Active' : 'Closed',
+            }));
+
             return sendResponse(res, {
                 responseType: RES_STATUS.GET,
                 data: formated_data,
@@ -970,40 +967,52 @@ class InstrumentsController {
 
     async current_postions(req, res, next) {
         try {
-            let formated_data = [];
-            const trades = await db[MODEL.TRADE].findAll({
-                where: {
-                    createdAt: {
-                        [Op.between]: [
-                            moment().startOf('day'),
-                            moment().endOf('day'),
-                        ],
-                    },
+            const {
+                query: { strategy_name, active_only },
+            } = req;
+            const activeOnly = active_only !== 'false';
+
+            const where: Record<string, unknown> = {
+                createdAt: {
+                    [Op.between]: [
+                        moment().startOf('day'),
+                        moment().endOf('day'),
+                    ],
                 },
+            };
+            if (activeOnly) {
+                where.is_active = true;
+            }
+            if (strategy_name) {
+                where.strategy_name = strategy_name;
+            }
+
+            const trades = await db[MODEL.TRADE].findAll({
+                where,
                 order: [['createdAt', 'DESC']],
             });
-            if (trades.length > 0) {
-                await Promise.all(
-                    trades.map(async (datas) => {
-                        formated_data.push({
-                            id: datas.trade_id,
-                            entryDate: datas.createdAt,
-                            symbol: datas.trading_symbol,
-                            buyPrice: datas.buy_price,
-                            sellPrice: datas.sell_price,
-                            currentLTP: datas.ltp,
-                            target: datas.target_price,
-                            stopploss: datas.stop_loss,
-                            profitLoss: datas.pl,
-                            quantity:
-                                Number(datas.lot_size) * Number(datas.qty),
-                            status: datas.is_active ? 'in_trade' : 'closed',
-                            trade_time: datas.createdAt,
-                            strategy_name: datas.strategy_name,
-                        });
-                    }),
-                );
-            }
+
+            const formated_data = trades.map((datas) => ({
+                id: datas.trade_id,
+                entryDate: datas.createdAt,
+                symbol: datas.trading_symbol,
+                strategy_name: datas.strategy_name,
+                instrument_type: datas.instrument_type,
+                buyPrice: datas.buy_price,
+                sellPrice: datas.sell_price,
+                currentLTP: datas.ltp,
+                target: datas.target_price,
+                stopploss: datas.stop_loss,
+                highest_ltp: Number(datas.highest_ltp ?? datas.ltp ?? 0),
+                profitLoss: datas.pl,
+                netPl: Number(datas.net_pl ?? datas.pl ?? 0),
+                charges: Number(datas.charges ?? 0),
+                quantity: Number(datas.lot_size) * Number(datas.qty),
+                exit_reason: datas.exit_reason,
+                status: datas.is_active ? 'in_trade' : 'closed',
+                trade_time: datas.createdAt,
+            }));
+
             return sendResponse(res, {
                 responseType: RES_STATUS.GET,
                 data: formated_data,
@@ -1117,8 +1126,19 @@ class InstrumentsController {
                     },
                 },
             );
+
+            const config = await db[MODEL.STRATEGY_CONFIG].findOne({
+                where: { strategy_name: 'SCALLPING' },
+            });
+
             return sendResponse(res, {
                 responseType: RES_STATUS.GET,
+                data: {
+                    isLive: is_live,
+                    mode: config?.mode ?? 'paper',
+                    liveTradingEnabled:
+                        is_live && config?.mode === 'live',
+                },
                 message: res.__('instruments').insert,
             });
         } catch (error) {

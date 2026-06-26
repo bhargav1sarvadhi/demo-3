@@ -72,9 +72,34 @@ export const tradeModel = (sequelize) => {
                 type: DataTypes.BOOLEAN,
                 defaultValue: true,
             },
+            highest_ltp: {
+                type: DataTypes.FLOAT,
+                defaultValue: 0,
+            },
+            charges: {
+                type: DataTypes.FLOAT,
+                defaultValue: 0,
+            },
+            net_pl: {
+                type: DataTypes.FLOAT,
+                defaultValue: 0,
+            },
+            partial_exit_done: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false,
+            },
+            original_qty: {
+                type: DataTypes.FLOAT,
+                defaultValue: 0,
+            },
+            exit_reason: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            },
         },
         {
             paranoid: true,
+            freezeTableName: true,
             indexes: [
                 {
                     fields: ['instrument_key'],

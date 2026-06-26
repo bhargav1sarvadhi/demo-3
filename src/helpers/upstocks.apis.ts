@@ -36,7 +36,11 @@ export const place_order_on_upstocks = async (data) => {
         console.log(response);
         console.log('✅ Order placed successfully:', response.data);
         return response.data;
-    } catch (error) {
-        logger.error('Error in place_order_on_upstocks', error);
+    } catch (error: any) {
+        logger.error(
+            'Error in place_order_on_upstocks',
+            error?.response?.data || error?.message || error,
+        );
+        return null;
     }
 };

@@ -37,4 +37,10 @@ export enum END_POINTS {
     DASHBOARD = '/dashboard-data',
     WEBHOOKS_TOKEN = '/upstock/webhooks/token',
     UPSTOCKS_ORDER_PLACE_TOGGLE = '/upstocks-order-place-toggle',
+    SCALPING_BACKTEST = '/scalping-backtest',
+    SCALPING_AUDIT_LOG = '/scalping-audit-log',
+    SCALPING_PERFORMANCE = '/scalping-performance',
+    SCALPING_OPTIMIZE = '/scalping-optimize',
+    SCALPING_STATUS = '/scalping-status',
+    STRATEGY_CONFIG = '/strategy-config',
 }

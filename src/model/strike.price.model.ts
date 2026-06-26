@@ -87,9 +87,26 @@ export const strikePriceModel = (sequelize) => {
                 type: DataTypes.BOOLEAN,
                 defaultValue: false,
             },
+            bid_price: {
+                type: DataTypes.FLOAT,
+                allowNull: true,
+            },
+            ask_price: {
+                type: DataTypes.FLOAT,
+                allowNull: true,
+            },
+            open_interest: {
+                type: DataTypes.FLOAT,
+                allowNull: true,
+            },
+            spread_pct: {
+                type: DataTypes.FLOAT,
+                allowNull: true,
+            },
         },
         {
             paranoid: true,
+            freezeTableName: true,
             indexes: [
                 {
                     fields: ['instrument_key'],

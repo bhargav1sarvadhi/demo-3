@@ -85,6 +85,34 @@ class InstrumentRoutes extends BaseRoute {
             paginationMiddleware,
             instrumentsController.upstocks_order_place_toggle,
         );
+        this.router.post(
+            END_POINTS.SCALPING_BACKTEST,
+            strategyController.run_scalping_backtest,
+        );
+        this.router.get(
+            END_POINTS.SCALPING_AUDIT_LOG,
+            strategyController.get_scalping_audit_log,
+        );
+        this.router.get(
+            END_POINTS.SCALPING_PERFORMANCE,
+            strategyController.get_scalping_performance,
+        );
+        this.router.post(
+            END_POINTS.SCALPING_OPTIMIZE,
+            strategyController.run_scalping_optimize,
+        );
+        this.router.get(
+            END_POINTS.SCALPING_STATUS,
+            strategyController.get_scalping_status,
+        );
+        this.router.get(
+            END_POINTS.STRATEGY_CONFIG,
+            strategyController.get_strategy_config,
+        );
+        this.router.patch(
+            END_POINTS.STRATEGY_CONFIG,
+            strategyController.update_strategy_config,
+        );
 
         this.router.get(END_POINTS.DASHBOARD, instrumentsController.dashboard);
     }

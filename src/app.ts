@@ -27,12 +27,18 @@ import { debounce } from 'lodash';
 import { Op } from 'sequelize';
 import axios from 'axios';
 import './utils/cron.job';
+import './utils/reconciliation.cron';
+import {
+    processMarketFeed,
+    STRATEGY_THROTTLE_MS,
+} from './helpers/scalping.trade.helper';
 
 let protobufRoot = null;
 let defaultClient = UpstoxClient.ApiClient.instance;
 let apiVersion = '3.0';
 let OAUTH2 = defaultClient.authentications['OAUTH2'];
 let updateBuffer = {};
+let lastStrategyRunAt = 0;
 
 const port = process.env.PORT_SERVER || 8000;
 const stocks = new Map<string, any>();
@@ -243,128 +249,17 @@ class AppServer {
             });
 
             ws.on('message', async (data) => {
-                // console.log(JSON.stringify(data));
                 const stocks_data: any = this.decodeProfobuf(data);
 
-                await strategyController.scallping_strategy_new();
-                // await strategyController.scallping_strategy_new_tralling_stoploss();
+                await processMarketFeed(stocks_data);
 
-                // console.log(stocks_data);
-                // if (stocks_data && stocks_data.feeds) {
-                //     for (const key in stocks_data.feeds) {
-                //         if (stocks_data.feeds.hasOwnProperty(key)) {
-                //             const feedData =
-                //                 stocks_data.feeds[key]?.fullFeed?.marketFF;
+                const now = Date.now();
+                if (now - lastStrategyRunAt >= STRATEGY_THROTTLE_MS) {
+                    lastStrategyRunAt = now;
+                    await strategyController.scallping_strategy_new();
+                }
 
-                //             // console.log(feedData.ltpc.ltp);
-
-                //             if (feedData.ltpc.ltp) {
-                //                 await db[MODEL.STRIKE_MODEL].update(
-                //                     { ltp: feedData?.ltpc?.ltp },
-                //                     {
-                //                         where: {
-                //                             instrument_key: key,
-                //                         },
-                //                     },
-                //                 );
-                //             }
-                //             if (feedData?.marketOHLC?.ohlc?.length) {
-                //                 const i1Candle = feedData.marketOHLC.ohlc.find(
-                //                     (c) => c.interval === 'I1',
-                //                 );
-                //                 if (i1Candle) {
-                //                     // console.log('1-min Candle:', i1Candle);
-                //                     const timestamp = i1Candle.ts.toNumber();
-                //                     const volume = i1Candle.vol.toNumber();
-                //                     const candleDate = new Date(timestamp);
-                //                     const candleDateIST =
-                //                         candleDate.toLocaleString('en-IN', {
-                //                             timeZone: 'Asia/Kolkata',
-                //                         });
-                //                     const [find, created] = await db[
-                //                         MODEL.CANDELS
-                //                     ].findOrCreate({
-                //                         where: {
-                //                             ts: timestamp.toString(),
-                //                             instrument_key: key,
-                //                         },
-                //                         defaults: {
-                //                             ts: timestamp.toString(),
-                //                             open: i1Candle.open,
-                //                             high: i1Candle.high,
-                //                             low: i1Candle.low,
-                //                             close: i1Candle.close,
-                //                             volume: volume,
-                //                             instrument_key: key,
-                //                             interval: i1Candle.interval,
-                //                         },
-                //                     });
-                //                     if (find) {
-                //                         const updated = await db[
-                //                             MODEL.CANDELS
-                //                         ].update(
-                //                             {
-                //                                 open: i1Candle.open,
-                //                                 high: i1Candle.high,
-                //                                 low: i1Candle.low,
-                //                                 close: i1Candle.close,
-                //                                 volume: volume,
-                //                             },
-                //                             { where: { id: find.id } },
-                //                         );
-                //                     }
-                //                 }
-                //             }
-                //         }
-                //     }
-                // } else {
-                //     console.log('No feeds data available');
-                // }
-                // strategyController.percentage_strategy();
-                // strategyController.sbin_timing_strategy();
-                // strategyController.percentage_without_contions_strategy();
-                const postions = async () => {
-                    let formated_data = [];
-                    const trades = await db[MODEL.TRADE].findAll({
-                        where: {
-                            createdAt: {
-                                [Op.between]: [
-                                    moment().startOf('day'),
-                                    moment().endOf('day'),
-                                ],
-                            },
-                        },
-                        order: [['createdAt', 'DESC']],
-                    });
-                    if (trades.length > 0) {
-                        await Promise.all(
-                            trades.map(async (datas) => {
-                                formated_data.push({
-                                    id: datas.trade_id,
-                                    entryDate: datas.createdAt,
-                                    symbol: datas.trading_symbol,
-                                    buyPrice: datas.buy_price,
-                                    sellPrice: datas.sell_price,
-                                    currentLTP: datas.ltp,
-                                    target: datas.target_price,
-                                    stopploss: datas.stop_loss,
-                                    profitLoss: datas.pl,
-                                    quantity:
-                                        Number(datas.lot_size) *
-                                        Number(datas.qty),
-                                    status: datas.is_active
-                                        ? 'in_trade'
-                                        : 'closed',
-                                    trade_time: data.createdAt,
-                                    strategy_name: data.strategy_name,
-                                });
-                            }),
-                        );
-                    }
-                    // console.log('Total PL:', totalPL);
-                    this.io.emit('stock_data', { data: formated_data });
-                };
-                postions();
+                await this.emitTodayTrades();
             });
             ws.on('error', (error) => {
                 console.error('WebSocket error:', error);
@@ -372,6 +267,42 @@ class AppServer {
             });
         });
     }
+
+    private async emitTodayTrades() {
+        const formated_data = [];
+        const trades = await db[MODEL.TRADE].findAll({
+            where: {
+                createdAt: {
+                    [Op.between]: [
+                        moment().startOf('day'),
+                        moment().endOf('day'),
+                    ],
+                },
+            },
+            order: [['createdAt', 'DESC']],
+        });
+
+        for (const datas of trades) {
+            formated_data.push({
+                id: datas.trade_id,
+                entryDate: datas.createdAt,
+                symbol: datas.trading_symbol,
+                buyPrice: datas.buy_price,
+                sellPrice: datas.sell_price,
+                currentLTP: datas.ltp,
+                target: datas.target_price,
+                stopploss: datas.stop_loss,
+                profitLoss: datas.pl,
+                quantity: Number(datas.lot_size) * Number(datas.qty),
+                status: datas.is_active ? 'in_trade' : 'closed',
+                trade_time: datas.createdAt,
+                strategy_name: datas.strategy_name,
+            });
+        }
+
+        this.io.emit('stock_data', { data: formated_data });
+    }
+
     async connectPortfolioWebSocket(wsPortfolioUrl) {
         return new Promise<WebSocket>((resolve, reject) => {
             const ws = new WebSocket(wsPortfolioUrl, {

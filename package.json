@@ -5,6 +5,9 @@
     "license": "MIT",
     "scripts": {
         "start": "nodemon src/app.ts",
+        "migrate": "sequelize-cli db:migrate",
+        "migrate:undo": "sequelize-cli db:migrate:undo",
+        "migrate:status": "sequelize-cli db:migrate:status",
         "format:check": "prettier --check .",
         "format:write": "prettier --write .",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx",

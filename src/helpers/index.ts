@@ -23,7 +23,47 @@ import {
     strike_around_start_end,
 } from './stock.helper';
 import { place_order_on_upstocks } from './upstocks.apis';
+import {
+    STRATEGY_THROTTLE_MS,
+    MAX_LOSS_PER_TRADE,
+    calculateTradePl,
+    closeScalpingTrade,
+    isLiveTradingEnabled,
+    placeEntryOrderIfLive,
+    processMarketFeed,
+} from './scalping.trade.helper';
+import {
+    monitorScalpingPosition,
+    getExitDecision,
+    ExitReason,
+} from './scalping.exit.helper';
+import {
+    buildMarketTime,
+    calculatePositionSize,
+    canOpenNewTrade,
+    getStrategyConfig,
+    resolveAccountBalance,
+    updateTrailingStop,
+    calculateTradeCharges,
+    calculateNetPl,
+} from './scalping.risk.helper';
+import {
+    trySignalEntry,
+    validateEntrySignal,
+} from './scalping.entry.filters';
 import { validateReq } from './validation.helper';
+import { getAuditSkipBreakdown, logScalpingDecision } from './scalping.audit.helper';
+import { runScalpingBacktest } from './scalping.backtest.helper';
+import { getScalpingPerformance } from './scalping.performance.helper';
+import { runScalpingOptimization } from './scalping.optimize.helper';
+import { computePerformanceMetrics } from './scalping.metrics.helper';
+import { getUpstoxPositions } from './scalping.reconciliation.helper';
+import {
+    resolveScalpingStrike,
+    validateMarketQuality,
+    syncActiveScalpingStrikes,
+    roundToStrikeStep,
+} from './scalping.market.quality.helper';
 
 export {
     // uploadImage,
@@ -48,4 +88,34 @@ export {
     getCurrentISTDate,
     find_sbin_stocks,
     place_order_on_upstocks,
+    processMarketFeed,
+    closeScalpingTrade,
+    placeEntryOrderIfLive,
+    isLiveTradingEnabled,
+    calculateTradePl,
+    STRATEGY_THROTTLE_MS,
+    MAX_LOSS_PER_TRADE,
+    monitorScalpingPosition,
+    getExitDecision,
+    buildMarketTime,
+    getStrategyConfig,
+    canOpenNewTrade,
+    calculatePositionSize,
+    resolveAccountBalance,
+    updateTrailingStop,
+    calculateTradeCharges,
+    calculateNetPl,
+    trySignalEntry,
+    validateEntrySignal,
+    logScalpingDecision,
+    getAuditSkipBreakdown,
+    runScalpingBacktest,
+    getScalpingPerformance,
+    runScalpingOptimization,
+    computePerformanceMetrics,
+    getUpstoxPositions,
+    resolveScalpingStrike,
+    validateMarketQuality,
+    syncActiveScalpingStrikes,
+    roundToStrikeStep,
 };
