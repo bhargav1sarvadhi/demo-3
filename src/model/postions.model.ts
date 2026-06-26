@@ -49,6 +49,10 @@ export const positionModel = (sequelize) => {
                 type: DataTypes.BOOLEAN,
                 defaultValue: false,
             },
+            is_upstock_exectued: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false,
+            },
         },
         {
             paranoid: true,

@@ -35,6 +35,10 @@ export const userModel = (sequelize) => {
                 type: DataTypes.FLOAT,
                 defaultValue: 0,
             },
+            is_live: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false,
+            },
         },
         {
             paranoid: true,

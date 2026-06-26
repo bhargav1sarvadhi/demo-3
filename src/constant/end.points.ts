@@ -36,4 +36,5 @@ export enum END_POINTS {
     CURRENT_POSTIONS = '/current-postions',
     DASHBOARD = '/dashboard-data',
     WEBHOOKS_TOKEN = '/upstock/webhooks/token',
+    UPSTOCKS_ORDER_PLACE_TOGGLE = '/upstocks-order-place-toggle',
 }

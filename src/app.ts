@@ -247,7 +247,7 @@ class AppServer {
                 const stocks_data: any = this.decodeProfobuf(data);
 
                 await strategyController.scallping_strategy_new();
-                await strategyController.scallping_strategy_new_tralling_stoploss();
+                // await strategyController.scallping_strategy_new_tralling_stoploss();
 
                 // console.log(stocks_data);
                 // if (stocks_data && stocks_data.feeds) {

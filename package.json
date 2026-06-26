@@ -45,7 +45,7 @@
         "socket.io": "^4.7.5",
         "technicalindicators": "^3.1.0",
         "typescript": "^5.2.2",
-        "upstox-js-sdk": "^2.4.0",
+        "upstox-js-sdk": "^2.25.0",
         "winston": "^3.10.0",
         "ws": "^8.16.0"
     },

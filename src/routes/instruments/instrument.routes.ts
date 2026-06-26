@@ -80,6 +80,12 @@ class InstrumentRoutes extends BaseRoute {
             paginationMiddleware,
             instrumentsController.current_postions,
         );
+        this.router.get(
+            END_POINTS.UPSTOCKS_ORDER_PLACE_TOGGLE,
+            paginationMiddleware,
+            instrumentsController.upstocks_order_place_toggle,
+        );
+
         this.router.get(END_POINTS.DASHBOARD, instrumentsController.dashboard);
     }
 }

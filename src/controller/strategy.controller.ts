@@ -1530,20 +1530,14 @@ class StrategyController {
                                                         logger.info(
                                                             'Trade Placed Successfully',
                                                         );
-                                                        if (
-                                                            process.env
-                                                                .UPSTOCKS_ACCOUNT ===
-                                                            'live'
-                                                        ) {
-                                                            const user =
-                                                                await db[
-                                                                    MODEL.USER
-                                                                ].findOne({
-                                                                    where: {
-                                                                        email: USER_DETAILS.EMAIL,
-                                                                    },
-                                                                });
-
+                                                        const user = await db[
+                                                            MODEL.USER
+                                                        ].findOne({
+                                                            where: {
+                                                                email: USER_DETAILS.EMAIL,
+                                                            },
+                                                        });
+                                                        if (user.is_live) {
                                                             const order_placed =
                                                                 await place_order_on_upstocks(
                                                                     {

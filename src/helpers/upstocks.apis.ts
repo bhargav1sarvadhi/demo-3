@@ -7,6 +7,7 @@ import { AppError } from '../utils';
 
 export const place_order_on_upstocks = async (data) => {
     try {
+        console.log(data);
         const url = 'https://api-hft.upstox.com/v3/order/place';
         const accessToken = data.accessToken; // Replace with your valid token
         const payload = {
@@ -21,8 +22,10 @@ export const place_order_on_upstocks = async (data) => {
             disclosed_quantity: 0,
             trigger_price: 0,
             is_amo: false,
-            slice: true,
+            slice: false,
+            market_protection: 0,
         };
+        console.log(accessToken);
         const response = await axios.post(url, payload, {
             headers: {
                 'Content-Type': 'application/json',
@@ -30,7 +33,7 @@ export const place_order_on_upstocks = async (data) => {
                 Authorization: `Bearer ${accessToken}`,
             },
         });
-
+        console.log(response);
         console.log('✅ Order placed successfully:', response.data);
         return response.data;
     } catch (error) {

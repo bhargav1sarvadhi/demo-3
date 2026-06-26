@@ -835,10 +835,39 @@ class InstrumentsController {
                 quantity: lot_size,
                 transaction_type: transaction_type,
             });
+            // let UpstoxClient = require('upstox-js-sdk');
+            // let defaultClient = UpstoxClient.ApiClient.instance;
+            // var OAUTH2 = defaultClient.authentications['OAUTH2'];
+            // OAUTH2.accessToken = '{https://api-v2.upstox.com}';
+
+            // let apiInstance = new UpstoxClient.OrderApiV3();
+            // let body = new UpstoxClient.PlaceOrderV3Request(
+            //     4000,
+            //     UpstoxClient.PlaceOrderV3Request.ProductEnum.D,
+            //     UpstoxClient.PlaceOrderV3Request.ValidityEnum.DAY,
+            //     0,
+            //     'NSE_FO|167351',
+            //     UpstoxClient.PlaceOrderV3Request.OrderTypeEnum.MARKET,
+            //     UpstoxClient.PlaceOrderV3Request.TransactionTypeEnum.BUY,
+            //     0,
+            //     0,
+            //     false,
+            // );
+            // let opt = { slice: true };
+
+            // apiInstance.placeOrder(body, opt, (error, data, response) => {
+            //     if (error) {
+            //         console.error(error.response.text);
+            //     } else {
+            //         console.log(
+            //             'API called successfully. Returned data: ' + data,
+            //         );
+            //     }
+            // });
 
             return sendResponse(res, {
                 responseType: RES_STATUS.GET,
-                data: order_placed,
+                // data: order_placed,
                 message: res.__('instruments').insert,
             });
         } catch (error) {
@@ -1064,6 +1093,34 @@ class InstrumentsController {
 
                 console.log(update);
             }
+        } catch (error) {
+            return next(error);
+        }
+    }
+    async upstocks_order_place_toggle(req, res, next) {
+        try {
+            const find_order = await db[MODEL.USER].findOne({
+                where: {
+                    email: USER_DETAILS.EMAIL,
+                },
+            });
+
+            const is_live = find_order.is_live ? false : true;
+
+            await db[MODEL.USER].update(
+                {
+                    is_live: is_live,
+                },
+                {
+                    where: {
+                        email: USER_DETAILS.EMAIL,
+                    },
+                },
+            );
+            return sendResponse(res, {
+                responseType: RES_STATUS.GET,
+                message: res.__('instruments').insert,
+            });
         } catch (error) {
             return next(error);
         }
